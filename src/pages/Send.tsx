@@ -21,6 +21,24 @@ const SendMoneyPage = () => {
     }
 
     try {
+
+      //Generate gas for sender
+      const generateGas = await fetch(`${API_BASE_URL}/activate-pay/${userId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${API_AUTH_TOKEN}`,
+        },
+      });
+
+      const gasResponse = await generateGas.json();
+
+      console.log("Gas :",gasResponse)
+
+      if (!generateGas.ok) {
+        alert(gasResponse.message || "Error generating gas");
+        return;
+      }
+
       //Fetch recipient details
       const getUserResponse = await fetch(`${API_BASE_URL}/recipient/${recipientEmail}`, {
         headers: {
@@ -30,7 +48,7 @@ const SendMoneyPage = () => {
 
       const recipientData = await getUserResponse.json();
 
-      console.log(recipientData.paymentIdentifier)
+      console.log(recipientData.email)
 
       if (!getUserResponse.ok) {
         alert(recipientData.message || "Error fetching recipient");
@@ -49,30 +67,29 @@ const SendMoneyPage = () => {
           transactionRecipient: recipientData.paymentIdentifier,
           transactionNotes: `Sent via app to ${recipientEmail}`,
         }),
-      });
+      })
 
-      const transferResponse = await transferCoins.json();
+      //Make Transaction
+      const makeTransaction = await fetch(`${API_BASE_URL}/create-transaction/${userId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_AUTH_TOKEN}`,
+        },
+        body: JSON.stringify({
+          transactionAmount: parseFloat(amount),
+          transactionCurrency: "ZAR",
+          transactionMethod: "Immediate",
+          transactionType: "Payment",
+          transactionAddress: recipientData.email,
+        }),
+      });
+      const transferResponse = await makeTransaction.json();
 
       console.log(transferResponse)
 
       if (!transferCoins.ok) {
         alert(transferResponse.message || "Error transferring coins");
-        return;
-      }
-
-      //Generate gas for sender
-      const generateGas = await fetch(`${API_BASE_URL}/activate-pay/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${API_AUTH_TOKEN}`,
-        },
-      });
-
-      const gasResponse = await generateGas.json();
-
-      console.log("Gas :",gasResponse)
-
-      if (!generateGas.ok) {
-        alert(gasResponse.message || "Error generating gas");
         return;
       }
 
