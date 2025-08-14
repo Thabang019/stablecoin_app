@@ -32,22 +32,43 @@ const handleSubmit = async (e: React.FormEvent) => {
       })
     })
 
-    const data = await response.json();
-    console.log('Response data:', data);
+    const data = await response.json()
+    console.log('External API response:', data)
 
     if (!response.ok) {
-      const errorData = await response.json()
-      alert(errorData.message)
+      alert(data.message || 'Error creating user externally')
       return
     }
 
-    alert('Sign up successful! Please log in.')
-    navigate('/login')
-  } catch (error) {
-    alert('Something went wrong. Please try again later.')
-    console.error('SignUp error:', error)
+      const saveResponse = await fetch("http://localhost:8080/api/user/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          userId: data.user.id,
+          role: "User",
+        }),
+      })
+
+      const saveData = await saveResponse.json()
+      console.log('Local backend response:', saveData)
+
+      if (!saveResponse.ok) {
+        alert(saveData.message || 'Error saving user locally')
+        return
+      }
+
+      alert('Sign up successful! Please log in.')
+      navigate('/login')
+
+    } catch (error) {
+      alert('Something went wrong. Please try again later.')
+      console.error('SignUp error:', error)
+    }
   }
-}
 
 
   return (

@@ -5,13 +5,55 @@ const LoginPage = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const navigate = useNavigate()
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+  const API_AUTH_TOKEN = import.meta.env.VITE_API_AUTH_TOKEN
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
 
-    console.log('Login:', { email, password })
-    navigate('/')
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      try {
+        // Login
+        const response = await fetch("http://localhost:8080/api/user/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const userId = await response.text();
+        localStorage.setItem("userId", userId);
+
+        // Fetch user details
+        const getUserResponse = await fetch(`${API_BASE_URL}/users/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${API_AUTH_TOKEN}` // Or remove if not needed
+          }
+        });
+
+        const data = await getUserResponse.json();
+
+        if (!getUserResponse.ok) {
+          alert(data.message || "Error fetching user");
+          return;
+        }
+
+        localStorage.setItem("user", JSON.stringify(data));
+
+        console.log("Response data:", data);
+        navigate("/dashboard");
+        
+      } catch (error) {
+        alert("Something went wrong. Please try again later.");
+        console.error("Login error:", error);
+      }
+    };
+
+
+
 
   return (
     <div style={{ maxWidth: 400, margin: 'auto', padding: 20 }}>

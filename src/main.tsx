@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/Welcome'
 import LoginPage from './pages/SignIn'
 import SignUpPage from './pages/SignUp'
+import Dashboard from './pages/Dashboard'
+import ProfilePage from './pages/Profile'
+import SendMoneyPage from './pages/Send'
 
 import { registerSW } from 'virtual:pwa-register'
 
@@ -17,6 +20,9 @@ createRoot(document.getElementById('root')!).render(
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/send" element={<SendMoneyPage />} />
     </Routes>
   </BrowserRouter>
 )
