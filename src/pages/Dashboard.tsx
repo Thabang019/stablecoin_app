@@ -4,7 +4,6 @@ import { FaQrcode } from 'react-icons/fa';
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from 'react-router-dom'
 
-
 // Types for better TypeScript support
 interface Transaction {
   id: string;
@@ -13,6 +12,7 @@ interface Transaction {
   amount: string;
   type: 'incoming' | 'outgoing' | 'pending';
   status: 'completed' | 'pending';
+  createdAt: string;
 }
 
 interface QuickAction {
@@ -23,6 +23,9 @@ interface QuickAction {
 
 const Dashboard: React.FC = ()  => {
   const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
   const navigate = useNavigate()
@@ -31,36 +34,24 @@ const Dashboard: React.FC = ()  => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   const API_AUTH_TOKEN = import.meta.env.VITE_API_AUTH_TOKEN
 
-  // Mock data - in real app, this would come from state management
-  const transactions: Transaction[] = [
-    {
-      id: '1',
-      title: 'Payment for coffee',
-      subtitle: 'From John Doe',
-      amount: '+R 150.00',
-      type: 'incoming',
-      status: 'completed'
-    },
-    {
-      id: '2',
-      title: 'Lunch split',
-      subtitle: 'To Sarah Wilson',
-      amount: '-R 75.50',
-      type: 'outgoing',
-      status: 'completed'
-    },
-    {
-      id: '3',
-      title: 'Rent payment',
-      subtitle: 'Payment Request',
-      amount: 'R 200.00',
-      type: 'pending',
-      status: 'pending'
-    }
-  ];
+  // Function to transform API transaction to UI transaction
+  const transformTransaction = (apiTransaction: any): Transaction => {
+    const isIncoming = apiTransaction.txType.toLowerCase().includes('from');
+    const isOutgoing = apiTransaction.txType.toLowerCase().includes('to');
+    
+    return {
+      id: apiTransaction.id,
+      title: apiTransaction.txType,
+      subtitle: `${apiTransaction.method} • ${new Date(apiTransaction.createdAt).toLocaleDateString()}`,
+      amount: `${isIncoming ? '+' : isOutgoing ? '-' : ''}R ${apiTransaction.value.toFixed(2)}`,
+      type: isIncoming ? 'incoming' : isOutgoing ? 'outgoing' : 'pending',
+      status: apiTransaction.status.toLowerCase() === 'complete' ? 'completed' : 'pending',
+      createdAt: apiTransaction.createdAt
+    };
+  };
 
-// Fetch user balance
-const fetchUserData = async () => {
+  // Fetch user balance
+  const fetchUserData = async () => {
     try {
       const getUserBalance = await fetch(`${API_BASE_URL}/${userId}/balance`, {
         headers: {
@@ -75,25 +66,21 @@ const fetchUserData = async () => {
         return;
       }
 
-    // Access the tokens array
-    const tokensArray = data.tokens; // <-- this is the array
-    const zarToken = tokensArray.find((t: { name: string }) => t.name.includes("ZAR"));
-    const zarBalance = zarToken.balance;
+      // Access the tokens array
+      const tokensArray = data.tokens;
+      const zarToken = tokensArray.find((t: { name: string }) => t.name.includes("ZAR"));
+      const zarBalance = zarToken.balance;
 
-    console.log("ZAR Balance:", zarBalance);
-    setBalance(zarBalance);
+      console.log("ZAR Balance:", zarBalance);
+      setBalance(zarBalance);
 
     } catch (error) {
       console.error("Error fetching balance:", error);
     }
   };
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-
-const fetchUserTransactions = async () => {
+  // Fetch user transactions
+  const fetchUserTransactions = async () => {
     try {
       const getTransactions = await fetch(`${API_BASE_URL}/${userId}/transactions`, {
         headers: {
@@ -104,18 +91,38 @@ const fetchUserTransactions = async () => {
       const transactionData = await getTransactions.json();
 
       if (!getTransactions.ok) {
-        alert(transactionData.message || "Error fetching user balance");
+        alert(transactionData.message || "Error fetching transactions");
         return;
       }
 
-
-    console.log("Transactions:", transactionData);
+      console.log("Transactions:", transactionData);
+      
+      // Transform and set transactions
+      const transformedTransactions = transactionData.transactions
+        .map(transformTransaction)
+        .sort((a: Transaction, b: Transaction) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ); // Sort by newest first
+      
+      setTransactions(transformedTransactions);
 
     } catch (error) {
-      console.error("Error fetching balance:", error);
+      console.error("Error fetching transactions:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
-fetchUserTransactions();
+
+  useEffect(() => {
+    const loadData = async () => {
+      await Promise.all([
+        fetchUserData(),
+        fetchUserTransactions()
+      ]);
+    };
+    
+    loadData();
+  }, []);
 
   const quickActions: QuickAction[] = [
     {
@@ -131,7 +138,7 @@ fetchUserTransactions();
     {
       icon: <FiCamera className="text-teal-400 text-2xl" />,
       label: 'Scan & Pay',
-      onClick: () => console.log('Scan & Pay clicked')
+      onClick: () => navigate('/pay')
     }
   ];
 
@@ -215,24 +222,54 @@ fetchUserTransactions();
         </div>
         
         <div className="space-y-3">
-          {transactions.map((transaction) => (
-            <div 
-              key={transaction.id}
-              className="bg-gray-800/50 backdrop-blur-sm p-4 rounded-2xl flex justify-between items-center border border-gray-700/30 hover:bg-gray-700/30 transition-all duration-200"
-            >
-              <div className="flex items-center gap-3">
-                {getStatusIcon(transaction.status)}
-                <div>
-                  <p className="font-medium text-white">{transaction.title}</p>
-                  <p className="text-sm text-gray-400">{transaction.subtitle}</p>
-                  <p className="text-xs text-gray-500 capitalize">{transaction.status}</p>
+          {isLoading ? (
+            // Loading skeleton
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-gray-800/50 backdrop-blur-sm p-4 rounded-2xl border border-gray-700/30">
+                  <div className="animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-600 rounded mb-2"></div>
+                        <div className="h-3 bg-gray-700 rounded w-3/4"></div>
+                      </div>
+                      <div className="h-4 bg-gray-600 rounded w-20"></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <p className={`font-semibold ${getTransactionColor(transaction)}`}>
-                {transaction.amount}
-              </p>
+              ))}
             </div>
-          ))}
+          ) : transactions.length === 0 ? (
+            // No transactions state
+            <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl border border-gray-700/30 text-center">
+              <div className="text-gray-400 mb-2">
+                <FiClock className="w-8 h-8 mx-auto mb-2" />
+                <p>No transactions yet</p>
+                <p className="text-sm">Your recent activity will appear here</p>
+              </div>
+            </div>
+          ) : (
+            // Real transactions
+            transactions.map((transaction) => (
+              <div 
+                key={transaction.id}
+                className="bg-gray-800/50 backdrop-blur-sm p-4 rounded-2xl flex justify-between items-center border border-gray-700/30 hover:bg-gray-700/30 transition-all duration-200"
+              >
+                <div className="flex items-center gap-3">
+                  {getStatusIcon(transaction.status)}
+                  <div>
+                    <p className="font-medium text-white">{transaction.title}</p>
+                    <p className="text-sm text-gray-400">{transaction.subtitle}</p>
+                    <p className="text-xs text-gray-500 capitalize">{transaction.status}</p>
+                  </div>
+                </div>
+                <p className={`font-semibold ${getTransactionColor(transaction)}`}>
+                  {transaction.amount}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </section>
 

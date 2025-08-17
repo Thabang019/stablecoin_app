@@ -1,0 +1,666 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+interface Contribution {
+  userId: string;
+  amount: number;
+  status: "PAID" | "PENDING" | "FAILED";
+  createdAt: string;
+}
+
+interface RequestDetails {
+  id: string;
+  totalAmount: number;
+  amountPaid: number;
+  amountRemaining: number;
+  description: string;
+  merchantId: string;
+  splitType: "OPEN" | "EQUAL";
+  status: "ACTIVE" | "COMPLETED" | "EXPIRED";
+  createdAt: string;
+  expiryDate: string;
+  contributions: Contribution[];
+  contributorCount: number;
+  canContribute: boolean;
+  suggestedAmount: number;
+}
+
+interface ContributePayload {
+  userId: string;
+  amount: number;
+  notes?: string;
+}
+
+const RequestDetailsPage = () => {
+  const { requestId } = useParams<{ requestId: string }>();
+  const navigate = useNavigate();
+  
+  const [requestDetails, setRequestDetails] = useState<RequestDetails | null>(null);
+  const [contributionAmount, setContributionAmount] = useState("");
+  const [notes, setNotes] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isContributing, setIsContributing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const userId = user?.user?.id;
+
+  const API_AUTH_TOKEN = import.meta.env.VITE_API_AUTH_TOKEN;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  // Auto-refresh interval
+  useEffect(() => {
+    if (!requestId) return;
+
+    const fetchRequestDetails = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/v1/requests/${requestId}`, {
+          headers: {
+            Authorization: `Bearer ${API_AUTH_TOKEN}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request not found (${response.status})`);
+        }
+
+        const data: RequestDetails = await response.json();
+        setRequestDetails(data);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch request details:", err);
+        setError("Failed to load request details. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRequestDetails();
+
+    // Auto-refresh every 5 seconds if request is active
+    const interval = setInterval(() => {
+      if (requestDetails?.status === "ACTIVE") {
+        fetchRequestDetails();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [requestId, BACKEND_URL, API_AUTH_TOKEN, requestDetails?.status]);
+
+  const handleContribute = async () => {
+    if (!requestDetails || !userId) return;
+
+    const amount = parseFloat(contributionAmount);
+    if (!amount || amount <= 0) {
+      setError("Please enter a valid contribution amount");
+      return;
+    }
+
+    if (amount > requestDetails.amountRemaining) {
+      setError(`Amount cannot exceed remaining balance of ${requestDetails.amountRemaining}`);
+      return;
+    }
+
+    setIsContributing(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      // Step 1: Check user balance (optional)
+      const balanceResponse = await fetch(`${API_BASE_URL}/${userId}/balance`, {
+        headers: { Authorization: `Bearer ${API_AUTH_TOKEN}` },
+      });
+
+      if (balanceResponse.ok) {
+        const balanceData = await balanceResponse.json();
+        console.log("User balance:", balanceData);
+        // Add balance validation if needed
+      }
+
+      // Step 2: Contribute to the request
+      const contributePayload: ContributePayload = {
+        userId: userId,
+        amount: amount,
+        notes: notes.trim() || `Contribution to ${requestDetails.description}`,
+      };
+
+      console.log("Contributing with payload:", contributePayload);
+
+      const contributeResponse = await fetch(
+        `${BACKEND_URL}/api/v1/requests/${requestId}/contribute`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${API_AUTH_TOKEN}`,
+          },
+          body: JSON.stringify(contributePayload),
+        }
+      );
+
+      if (!contributeResponse.ok) {
+        const errorData = await contributeResponse.json();
+        throw new Error(errorData.message || `Contribution failed (${contributeResponse.status})`);
+      }
+
+      const updatedRequest: RequestDetails = await contributeResponse.json();
+      setRequestDetails(updatedRequest);
+
+      setSuccessMessage(
+        `Successfully contributed ${amount} to the payment! ${
+          updatedRequest.status === "COMPLETED" 
+            ? "🎉 Payment is now complete!" 
+            : `Remaining: ${updatedRequest.amountRemaining}`
+        }`
+      );
+
+      setContributionAmount("");
+      setNotes("");
+
+    } catch (err) {
+      console.error("Contribution failed:", err);
+      setError(err instanceof Error ? err.message : "Contribution failed. Please try again.");
+    } finally {
+      setIsContributing(false);
+    }
+  };
+
+  const getProgressPercentage = () => {
+    if (!requestDetails) return 0;
+    return Math.min((requestDetails.amountPaid / requestDetails.totalAmount) * 100, 100);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "ACTIVE": return "#10b981";
+      case "COMPLETED": return "#059669";
+      case "EXPIRED": return "#ef4444";
+      default: return "#6b7280";
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  const isExpired = () => {
+    if (!requestDetails) return false;
+    return new Date(requestDetails.expiryDate) < new Date();
+  };
+
+  const canUserContribute = () => {
+    if (!requestDetails || !userId) return false;
+    if (requestDetails.status !== "ACTIVE") return false;
+    if (isExpired()) return false;
+    
+    // Check if user already contributed (optional business rule)
+    const hasContributed = requestDetails.contributions.some(c => c.userId === userId);
+    return !hasContributed;
+  };
+
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        minHeight: "400px",
+        color: "white"
+      }}>
+        <div>Loading request details...</div>
+      </div>
+    );
+  }
+
+  if (error && !requestDetails) {
+    return (
+      <div style={{
+        maxWidth: 500,
+        margin: "auto",
+        padding: 24,
+        color: "white",
+        backgroundColor: "#1f2937",
+        borderRadius: 16,
+        textAlign: "center"
+      }}>
+        <h2>Request Not Found</h2>
+        <p style={{ color: "#ef4444", marginBottom: 20 }}>{error}</p>
+        <button
+          onClick={() => navigate("/dashboard")}
+          style={{
+            padding: "12px 24px",
+            backgroundColor: "#374151",
+            color: "white",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer"
+          }}
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      maxWidth: 600,
+      margin: "auto",
+      padding: 24,
+      color: "white",
+      backgroundColor: "#1f2937",
+      borderRadius: 16,
+      boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+    }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 8 }}>
+          Collaborative Payment
+        </h1>
+        <p style={{ color: "#9ca3af", fontSize: 14 }}>
+          Request ID: {requestId}
+        </p>
+      </div>
+
+      {requestDetails && (
+        <>
+          {/* Status and Description */}
+          <div style={{ 
+            backgroundColor: "#374151", 
+            padding: 20, 
+            borderRadius: 12, 
+            marginBottom: 20 
+          }}>
+            <div style={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              alignItems: "center",
+              marginBottom: 12 
+            }}>
+              <h2 style={{ fontSize: 20, margin: 0 }}>{requestDetails.description}</h2>
+              <span style={{ 
+                padding: "6px 12px",
+                borderRadius: 20,
+                backgroundColor: getStatusColor(requestDetails.status),
+                color: "white",
+                fontSize: 12,
+                fontWeight: 600
+              }}>
+                {requestDetails.status}
+              </span>
+            </div>
+            
+            <div style={{ fontSize: 14, color: "#d1d5db" }}>
+              <p>Split Type: {requestDetails.splitType === "OPEN" ? "Open amounts" : "Equal splits"}</p>
+              <p>Created: {formatDate(requestDetails.createdAt)}</p>
+              <p>Expires: {formatDate(requestDetails.expiryDate)}</p>
+              {isExpired() && (
+                <p style={{ color: "#ef4444", fontWeight: 600 }}>⚠️ This request has expired</p>
+              )}
+            </div>
+          </div>
+
+          {/* Progress Section */}
+          <div style={{ 
+            backgroundColor: "#374151", 
+            padding: 20, 
+            borderRadius: 12, 
+            marginBottom: 20 
+          }}>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                <span>Progress</span>
+                <span>{getProgressPercentage().toFixed(1)}%</span>
+              </div>
+              <div style={{
+                width: "100%",
+                height: 12,
+                backgroundColor: "#4b5563",
+                borderRadius: 6,
+                overflow: "hidden"
+              }}>
+                <div style={{
+                  width: `${getProgressPercentage()}%`,
+                  height: "100%",
+                  backgroundColor: requestDetails.status === "COMPLETED" ? "#10b981" : "#3b82f6",
+                  transition: "width 0.5s ease"
+                }} />
+              </div>
+            </div>
+
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "1fr 1fr 1fr", 
+              gap: 16, 
+              textAlign: "center" 
+            }}>
+              <div>
+                <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Total Amount</p>
+                <p style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>
+                  {requestDetails.totalAmount.toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Amount Paid</p>
+                <p style={{ fontSize: 18, fontWeight: 600, margin: 0, color: "#10b981" }}>
+                  {requestDetails.amountPaid.toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Remaining</p>
+                <p style={{ fontSize: 18, fontWeight: 600, margin: 0, color: "#ef4444" }}>
+                  {requestDetails.amountRemaining.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Error/Success Messages */}
+          {error && (
+            <div style={{ 
+              color: "#ef4444", 
+              backgroundColor: "#fef2f2",
+              padding: 12,
+              borderRadius: 8,
+              marginBottom: 16,
+              border: "1px solid #fecaca"
+            }}>
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div style={{ 
+              color: "#059669", 
+              backgroundColor: "#f0fdf4",
+              padding: 12,
+              borderRadius: 8,
+              marginBottom: 16,
+              border: "1px solid #bbf7d0"
+            }}>
+              <strong>Success:</strong> {successMessage}
+            </div>
+          )}
+
+          {/* Contribution Form */}
+          {canUserContribute() && requestDetails.status === "ACTIVE" && (
+            <div style={{ 
+              backgroundColor: "#374151", 
+              padding: 20, 
+              borderRadius: 12, 
+              marginBottom: 20 
+            }}>
+              <h3 style={{ marginBottom: 16, fontSize: 18 }}>Make a Contribution</h3>
+              
+              {requestDetails.splitType === "EQUAL" && (
+                <div style={{ 
+                  backgroundColor: "#1f2937", 
+                  padding: 12, 
+                  borderRadius: 8, 
+                  marginBottom: 16,
+                  border: "1px solid #10b981"
+                }}>
+                  <p style={{ margin: 0, fontSize: 14, color: "#10b981" }}>
+                    💡 Suggested amount: {requestDetails.suggestedAmount.toFixed(2)} ZAR
+                  </p>
+                </div>
+              )}
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ 
+                  display: "block",
+                  marginBottom: 6,
+                  fontSize: 14,
+                  fontWeight: 500
+                }}>
+                  Contribution Amount:
+                </label>
+                <input
+                  type="number"
+                  value={contributionAmount}
+                  onChange={(e) => setContributionAmount(e.target.value)}
+                  placeholder={`Max: ${requestDetails.amountRemaining.toFixed(2)}`}
+                  min="0"
+                  max={requestDetails.amountRemaining}
+                  step="0.01"
+                  style={{ 
+                    width: "100%", 
+                    padding: 12, 
+                    borderRadius: 8,
+                    border: "1px solid #4b5563",
+                    backgroundColor: "#1f2937",
+                    color: "white",
+                    fontSize: 16
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ 
+                  display: "block",
+                  marginBottom: 6,
+                  fontSize: 14,
+                  fontWeight: 500
+                }}>
+                  Notes (optional):
+                </label>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add a note for your contribution"
+                  style={{ 
+                    width: "100%", 
+                    padding: 12, 
+                    borderRadius: 8,
+                    border: "1px solid #4b5563",
+                    backgroundColor: "#1f2937",
+                    color: "white",
+                    fontSize: 16
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={handleContribute}
+                disabled={isContributing || !contributionAmount || parseFloat(contributionAmount) <= 0}
+                style={{
+                  width: "100%",
+                  padding: "14px 20px",
+                  borderRadius: 8,
+                  backgroundColor: isContributing ? "#6b7280" : "#0d9488",
+                  color: "white",
+                  border: "none",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: (isContributing || !contributionAmount) ? "not-allowed" : "pointer",
+                  transition: "background-color 0.2s"
+                }}
+              >
+                {isContributing ? "Processing Payment..." : "Contribute Now"}
+              </button>
+            </div>
+          )}
+
+          {/* Status Messages for Non-Contributing Users */}
+          {!canUserContribute() && requestDetails.status === "ACTIVE" && (
+            <div style={{ 
+              backgroundColor: "#374151", 
+              padding: 20, 
+              borderRadius: 12, 
+              marginBottom: 20,
+              textAlign: "center" 
+            }}>
+              {!userId ? (
+                <p>Please log in to contribute to this payment.</p>
+              ) : requestDetails.contributions.some(c => c.userId === userId) ? (
+                <div>
+                  <p style={{ color: "#10b981", marginBottom: 8 }}>✅ You have already contributed to this payment!</p>
+                  <p style={{ fontSize: 14, color: "#9ca3af" }}>
+                    Thank you for your contribution. You can share this link with others to help complete the payment.
+                  </p>
+                </div>
+              ) : (
+                <p>You are not eligible to contribute to this payment.</p>
+              )}
+            </div>
+          )}
+
+          {requestDetails.status === "COMPLETED" && (
+            <div style={{ 
+              backgroundColor: "#065f46", 
+              padding: 20, 
+              borderRadius: 12, 
+              marginBottom: 20,
+              textAlign: "center",
+              border: "2px solid #10b981"
+            }}>
+              <h3 style={{ color: "#10b981", margin: 0, marginBottom: 8 }}>🎉 Payment Completed!</h3>
+              <p style={{ margin: 0, color: "#d1fae5" }}>
+                This collaborative payment has been successfully completed. 
+                All contributors have been notified.
+              </p>
+            </div>
+          )}
+
+          {requestDetails.status === "EXPIRED" && (
+            <div style={{ 
+              backgroundColor: "#7f1d1d", 
+              padding: 20, 
+              borderRadius: 12, 
+              marginBottom: 20,
+              textAlign: "center",
+              border: "2px solid #ef4444"
+            }}>
+              <h3 style={{ color: "#ef4444", margin: 0, marginBottom: 8 }}>⏰ Payment Expired</h3>
+              <p style={{ margin: 0, color: "#fecaca" }}>
+                This payment request has expired and can no longer accept contributions.
+              </p>
+            </div>
+          )}
+
+          {/* Contributors List */}
+          {requestDetails.contributions.length > 0 && (
+            <div style={{ 
+              backgroundColor: "#374151", 
+              padding: 20, 
+              borderRadius: 12, 
+              marginBottom: 20 
+            }}>
+              <h3 style={{ marginBottom: 16, fontSize: 18 }}>
+                Contributors ({requestDetails.contributorCount})
+              </h3>
+              
+              <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                {requestDetails.contributions.map((contribution, index) => (
+                  <div key={index} style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "12px 0",
+                    borderBottom: index < requestDetails.contributions.length - 1 ? "1px solid #4b5563" : "none"
+                  }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 500 }}>
+                        {contribution.userId === userId ? "You" : `User ${contribution.userId.slice(-4)}`}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>
+                        {formatDate(contribution.createdAt)}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ 
+                        margin: 0, 
+                        fontSize: 16, 
+                        fontWeight: 600,
+                        color: contribution.status === "PAID" ? "#10b981" : "#ef4444"
+                      }}>
+                        {contribution.amount.toFixed(2)} ZAR
+                      </p>
+                      <p style={{ 
+                        margin: 0, 
+                        fontSize: 12,
+                        color: contribution.status === "PAID" ? "#10b981" : "#ef4444"
+                      }}>
+                        {contribution.status}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Share Section */}
+          <div style={{ 
+            backgroundColor: "#374151", 
+            padding: 20, 
+            borderRadius: 12, 
+            marginBottom: 20 
+          }}>
+            <h3 style={{ marginBottom: 12, fontSize: 18 }}>Share This Payment</h3>
+            <div style={{ 
+              display: "flex", 
+              gap: 8,
+              alignItems: "center"
+            }}>
+              <input
+                type="text"
+                value={window.location.href}
+                readOnly
+                style={{
+                  flex: 1,
+                  padding: 10,
+                  borderRadius: 6,
+                  border: "1px solid #4b5563",
+                  backgroundColor: "#1f2937",
+                  color: "#9ca3af",
+                  fontSize: 14
+                }}
+              />
+              <button
+                onClick={() => navigator.clipboard.writeText(window.location.href)}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 6,
+                  backgroundColor: "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  fontSize: 14,
+                  cursor: "pointer"
+                }}
+              >
+                Copy Link
+              </button>
+            </div>
+            <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 8 }}>
+              Share this link with others so they can contribute to the payment
+            </p>
+          </div>
+
+          {/* Back Button */}
+          <button
+            onClick={() => navigate("/dashboard")}
+            style={{
+              width: "100%",
+              padding: "12px 20px",
+              borderRadius: 8,
+              backgroundColor: "#6b7280",
+              color: "white",
+              border: "none",
+              fontSize: 16,
+              cursor: "pointer"
+            }}
+          >
+            Back to Dashboard
+          </button>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default RequestDetailsPage;

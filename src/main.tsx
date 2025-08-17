@@ -9,13 +9,15 @@ import SignUpPage from './pages/SignUp'
 import Dashboard from './pages/Dashboard'
 import ProfilePage from './pages/Profile'
 import SendMoneyPage from './pages/Send'
+import RequestDetailsPage from './pages/RequestDetails'
+import CollaborativeDashboard from './pages/PaymentsDashboard'
 
 import { registerSW } from 'virtual:pwa-register'
 
 registerSW({ immediate: true })
 
 createRoot(document.getElementById('root')!).render(
-   <BrowserRouter>
+  <BrowserRouter>
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
@@ -23,6 +25,8 @@ createRoot(document.getElementById('root')!).render(
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/send" element={<SendMoneyPage />} />
+      <Route path="/request/:requestId" element={<RequestDetailsPage />} />
+      <Route path="/collaborative" element={<CollaborativeDashboard />} />
     </Routes>
   </BrowserRouter>
 )
