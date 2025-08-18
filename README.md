@@ -1,69 +1,182 @@
 # React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Stablecoin App
 
-Currently, two official plugins are available:
+A modern React-based stablecoin application with collaborative payment features, built with TypeScript and Vite.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- 🔐 **Secure Authentication** - Email/password login with validation
+- 💰 **Digital Wallet** - ZAR stablecoin balance management
+- 💸 **Direct Transfers** - Send money to other users instantly
+- 🤝 **Collaborative Payments** - Group payment requests with flexible or equal splits
+- 📱 **Progressive Web App** - Installable mobile experience
+- 🔄 **Real-time Updates** - Live transaction and payment status updates
+- 📊 **Transaction History** - Complete payment tracking
+- 🎨 **Modern UI** - Dark theme with smooth animations
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech Stack
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Frontend**: React 19, TypeScript, Vite
+- **Styling**: CSS-in-JS with modern design system
+- **State Management**: React hooks with custom API hooks
+- **Routing**: React Router DOM
+- **PWA**: Vite PWA plugin
+- **Testing**: Vitest, Testing Library
+- **Icons**: React Icons
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Getting Started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- Backend API service running
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd stablecoin-app
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Update `.env` with your configuration:
+   ```env
+   VITE_API_BASE_URL=https://your-api-base-url.com/api/v1
+   VITE_API_AUTH_TOKEN=your-auth-token-here
+   VITE_BACKEND_URL=http://localhost:8080
+   ```
+
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run test` - Run tests
+- `npm run test:ui` - Run tests with UI
+- `npm run test:coverage` - Run tests with coverage
+- `npm run type-check` - TypeScript type checking
+
+## Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ErrorBoundary.tsx
+│   └── LoadingSpinner.tsx
+├── hooks/              # Custom React hooks
+│   ├── useApi.ts
+│   └── useLocalStorage.ts
+├── pages/              # Page components
+│   ├── Dashboard.tsx
+│   ├── Send.tsx
+│   ├── SignIn.tsx
+│   └── ...
+├── types/              # TypeScript type definitions
+│   └── api.ts
+├── utils/              # Utility functions
+│   ├── api.ts
+│   ├── config.ts
+│   ├── logger.ts
+│   └── validation.ts
+└── test/               # Test files
+    ├── setup.ts
+    └── utils/
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Key Features Explained
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Authentication
+- Secure email/password authentication
+- Form validation with helpful error messages
+- Persistent login state with localStorage
+- Automatic token management
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Wallet Management
+- Real-time balance updates
+- Multi-token support (ZAR stablecoin)
+- Transaction history with filtering
+- Balance visualization
+
+### Direct Payments
+- Send money to any registered user
+- Recipient validation
+- Gas fee management
+- Transaction confirmation
+
+### Collaborative Payments
+- Create group payment requests
+- Flexible or equal split options
+- QR code sharing
+- Real-time contribution tracking
+- Automatic completion when target reached
+
+### Progressive Web App
+- Installable on mobile devices
+- Offline capability
+- Push notifications (planned)
+- Native app-like experience
+
+## API Integration
+
+The app integrates with two main services:
+
+1. **Rapyd API** - For blockchain transactions and wallet management
+2. **Backend Service** - For collaborative payments and user management
+
+All API calls include:
+- Automatic retry logic
+- Error handling
+- Loading states
+- Type safety
+
+## Error Handling
+
+- Global error boundary for React errors
+- API error handling with user-friendly messages
+- Form validation with real-time feedback
+- Comprehensive logging system
+
+## Testing
+
+- Unit tests for utility functions
+- Component testing with Testing Library
+- API mocking for reliable tests
+- Coverage reporting
+
+Run tests:
+```bash
+npm run test
 ```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
+
