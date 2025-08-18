@@ -120,6 +120,21 @@ const RequestDetailsPage = () => {
         // Add balance validation if needed
       }
 
+      //Generate gas for the transaction
+      const generateGas = await fetch(`${API_BASE_URL}/activate-pay/${userId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${API_AUTH_TOKEN}` },
+      });
+
+      if (!generateGas.ok) {
+        const gasError = await generateGas.json();
+        console.error("Gas generation failed:", gasError);
+        setError(gasError.message || "Error generating gas");
+        return;
+      }
+
+      console.log("Gas generated successfully");
+
       // Step 2: Contribute to the request
       const contributePayload: ContributePayload = {
         userId: userId,
