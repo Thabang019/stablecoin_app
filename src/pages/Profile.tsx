@@ -19,6 +19,25 @@ const ProfilePage = () => {
     }
   }, []);
 
+  const handleLogout = () => {
+    try {
+      setUserData({
+        firstName: "",
+        lastName: "",
+        email: "",
+      });
+
+      localStorage.removeItem('user');
+      localStorage.removeItem('userId');
+  
+      window.location.href = '/login'; 
+      
+    } catch (error) {
+      console.error('Logout failed:', error);
+      window.location.href = '/';
+    }
+  };
+
   return (
     <div
       style={{
@@ -61,6 +80,24 @@ const ProfilePage = () => {
           style={{ width: "100%", padding: 8, marginTop: 4, borderRadius: 6 }}
         />
       </div>
+
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: "8px 16px",
+            backgroundColor: "#dc3545",
+            color: "white",
+            border: "none",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontSize: "14px",
+          }}
+        >
+          Logout
+        </button>
+      </div>
+
     </div>
   );
 };
