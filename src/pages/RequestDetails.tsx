@@ -1,5 +1,8 @@
+// Updated RequestDetails.tsx - Add QR code generation
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import QRCode from "react-qr-code";
 
 interface Contribution {
   userId: string;
@@ -42,14 +45,32 @@ const RequestDetailsPage = () => {
   const [isContributing, setIsContributing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showQR, setShowQR] = useState(false);
 
   const storedUser = localStorage.getItem("user");
+  const recipientDetails = localStorage.getItem("recipientData");
+  const reciever = recipientDetails ? JSON.parse(recipientDetails) : null;
+  const firstName = reciever.user.firstName;
+  const lastName = reciever.user.lastName;
   const user = storedUser ? JSON.parse(storedUser) : null;
   const userId = user?.user?.id;
 
   const API_AUTH_TOKEN = import.meta.env.VITE_API_AUTH_TOKEN;
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  // Generate QR URL for this request
+  const generateQRUrl = (requestId: string): string => {
+    const qrData = {
+      type: 'collaborative',
+      requestId: requestId,
+      timestamp: Date.now(),
+      version: '1.0'
+    };
+    
+    const encodedData = btoa(JSON.stringify(qrData));
+    return `${window.location.origin}/request/${requestId}?qr=1&data=${encodedData}`;
+  };
 
   // Auto-refresh interval
   useEffect(() => {
@@ -80,6 +101,36 @@ const RequestDetailsPage = () => {
 
     fetchRequestDetails();
 
+    console.log("Recipient data:", requestId);
+    console.log("Recipient data:", requestDetails);
+
+    const fetchRecipientDetails = async () => {
+      try {
+       const getRecipient = await fetch(`${API_BASE_URL}/users/${requestDetails?.merchantId}`, {
+          headers: {
+            Authorization: `Bearer ${API_AUTH_TOKEN}`
+          }
+        });
+
+        const data = await getRecipient.json();
+
+        if (!getRecipient.ok) {
+          alert(data.message || "Error fetching user");
+          return;
+        }
+
+        localStorage.setItem("recipientData", JSON.stringify(data));
+
+        console.log("Recipient data:", data);
+
+      } catch (error) {
+        alert("Something went wrong. Please try again later.");
+        console.error("Recipient data error:", error);
+      }
+    };
+
+    fetchRecipientDetails();
+
     // Auto-refresh every 5 seconds if request is active
     const interval = setInterval(() => {
       if (requestDetails?.status === "ACTIVE") {
@@ -109,7 +160,7 @@ const RequestDetailsPage = () => {
     setSuccessMessage(null);
 
     try {
-      // Step 1: Check user balance (optional)
+      // Check user balance (optional)
       const balanceResponse = await fetch(`${API_BASE_URL}/${userId}/balance`, {
         headers: { Authorization: `Bearer ${API_AUTH_TOKEN}` },
       });
@@ -117,10 +168,9 @@ const RequestDetailsPage = () => {
       if (balanceResponse.ok) {
         const balanceData = await balanceResponse.json();
         console.log("User balance:", balanceData);
-        // Add balance validation if needed
       }
 
-      //Generate gas for the transaction
+      // Generate gas for the transaction
       const generateGas = await fetch(`${API_BASE_URL}/activate-pay/${userId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${API_AUTH_TOKEN}` },
@@ -135,7 +185,7 @@ const RequestDetailsPage = () => {
 
       console.log("Gas generated successfully");
 
-      // Step 2: Contribute to the request
+      // Contribute to the request
       const contributePayload: ContributePayload = {
         userId: userId,
         amount: amount,
@@ -211,9 +261,14 @@ const RequestDetailsPage = () => {
     if (requestDetails.status !== "ACTIVE") return false;
     if (isExpired()) return false;
     
-    // Check if user already contributed (optional business rule)
+    // Check if user already contributed
     const hasContributed = requestDetails.contributions.some(c => c.userId === userId);
     return !hasContributed;
+  };
+
+  // Check if current user is the creator of this request
+  const isRequestCreator = () => {
+    return userId && requestDetails?.merchantId === userId;
   };
 
   if (isLoading) {
@@ -276,7 +331,7 @@ const RequestDetailsPage = () => {
           Collaborative Payment
         </h1>
         <p style={{ color: "#9ca3af", fontSize: 14 }}>
-          Request ID: {requestId}
+          Reciever Name: {firstName}  {lastName}
         </p>
       </div>
 
@@ -355,19 +410,19 @@ const RequestDetailsPage = () => {
               <div>
                 <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Total Amount</p>
                 <p style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>
-                  {requestDetails.totalAmount.toFixed(2)}
+                  R{requestDetails.totalAmount.toFixed(2)}
                 </p>
               </div>
               <div>
                 <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Amount Paid</p>
                 <p style={{ fontSize: 18, fontWeight: 600, margin: 0, color: "#10b981" }}>
-                  {requestDetails.amountPaid.toFixed(2)}
+                  R{requestDetails.amountPaid.toFixed(2)}
                 </p>
               </div>
               <div>
                 <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Remaining</p>
                 <p style={{ fontSize: 18, fontWeight: 600, margin: 0, color: "#ef4444" }}>
-                  {requestDetails.amountRemaining.toFixed(2)}
+                  R{requestDetails.amountRemaining.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -400,6 +455,98 @@ const RequestDetailsPage = () => {
             </div>
           )}
 
+          {/* QR Code Section - Show for active requests */}
+          {requestDetails.status === "ACTIVE" && (
+            <div style={{ 
+              backgroundColor: "#374151", 
+              padding: 20, 
+              borderRadius: 12, 
+              marginBottom: 20 
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: 18 }}>Share Payment Request</h3>
+                <button
+                  onClick={() => setShowQR(!showQR)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 6,
+                    backgroundColor: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    fontSize: 14,
+                    cursor: "pointer"
+                  }}
+                >
+                  {showQR ? "Hide QR" : "Show QR Code"}
+                </button>
+              </div>
+
+              {showQR && (
+                <div style={{ 
+                  textAlign: "center", 
+                  backgroundColor: "white", 
+                  padding: 20, 
+                  borderRadius: 8,
+                  marginBottom: 16
+                }}>
+                  <QRCode 
+                    value={generateQRUrl(requestDetails.id)}
+                    size={200}
+                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  />
+                  <p style={{ 
+                    margin: "8px 0 0 0", 
+                    fontSize: 12, 
+                    color: "#6b7280"
+                  }}>
+                    Scan to contribute to this payment
+                  </p>
+                </div>
+              )}
+
+              <div style={{ 
+                display: "flex", 
+                gap: 8,
+                alignItems: "center"
+              }}>
+                <input
+                  type="text"
+                  value={window.location.href}
+                  readOnly
+                  style={{
+                    flex: 1,
+                    padding: 10,
+                    borderRadius: 6,
+                    border: "1px solid #4b5563",
+                    backgroundColor: "#1f2937",
+                    color: "#9ca3af",
+                    fontSize: 14
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert("Link copied to clipboard!");
+                  }}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: 6,
+                    backgroundColor: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    fontSize: 14,
+                    cursor: "pointer"
+                  }}
+                >
+                  Copy Link
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 8 }}>
+                Share this link or QR code with others so they can contribute
+              </p>
+            </div>
+          )}
+
           {/* Contribution Form */}
           {canUserContribute() && requestDetails.status === "ACTIVE" && (
             <div style={{ 
@@ -419,7 +566,7 @@ const RequestDetailsPage = () => {
                   border: "1px solid #10b981"
                 }}>
                   <p style={{ margin: 0, fontSize: 14, color: "#10b981" }}>
-                    💡 Suggested amount: {requestDetails.suggestedAmount.toFixed(2)} ZAR
+                    💡 Suggested amount: R{requestDetails.suggestedAmount.toFixed(2)}
                   </p>
                 </div>
               )}
@@ -437,7 +584,7 @@ const RequestDetailsPage = () => {
                   type="number"
                   value={contributionAmount}
                   onChange={(e) => setContributionAmount(e.target.value)}
-                  placeholder={`Max: ${requestDetails.amountRemaining.toFixed(2)}`}
+                  placeholder={`Max: R${requestDetails.amountRemaining.toFixed(2)}`}
                   min="0"
                   max={requestDetails.amountRemaining}
                   step="0.01"
@@ -510,7 +657,22 @@ const RequestDetailsPage = () => {
               textAlign: "center" 
             }}>
               {!userId ? (
-                <p>Please log in to contribute to this payment.</p>
+                <div>
+                  <p style={{ marginBottom: 16 }}>Please log in to contribute to this payment.</p>
+                  <button
+                    onClick={() => navigate("/login")}
+                    style={{
+                      padding: "12px 24px",
+                      backgroundColor: "#3b82f6",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Go to Login
+                  </button>
+                </div>
               ) : requestDetails.contributions.some(c => c.userId === userId) ? (
                 <div>
                   <p style={{ color: "#10b981", marginBottom: 8 }}>✅ You have already contributed to this payment!</p>
@@ -593,7 +755,7 @@ const RequestDetailsPage = () => {
                         fontWeight: 600,
                         color: contribution.status === "PAID" ? "#10b981" : "#ef4444"
                       }}>
-                        {contribution.amount.toFixed(2)} ZAR
+                        R{contribution.amount.toFixed(2)}
                       </p>
                       <p style={{ 
                         margin: 0, 
@@ -608,53 +770,6 @@ const RequestDetailsPage = () => {
               </div>
             </div>
           )}
-
-          {/* Share Section */}
-          <div style={{ 
-            backgroundColor: "#374151", 
-            padding: 20, 
-            borderRadius: 12, 
-            marginBottom: 20 
-          }}>
-            <h3 style={{ marginBottom: 12, fontSize: 18 }}>Share This Payment</h3>
-            <div style={{ 
-              display: "flex", 
-              gap: 8,
-              alignItems: "center"
-            }}>
-              <input
-                type="text"
-                value={window.location.href}
-                readOnly
-                style={{
-                  flex: 1,
-                  padding: 10,
-                  borderRadius: 6,
-                  border: "1px solid #4b5563",
-                  backgroundColor: "#1f2937",
-                  color: "#9ca3af",
-                  fontSize: 14
-                }}
-              />
-              <button
-                onClick={() => navigator.clipboard.writeText(window.location.href)}
-                style={{
-                  padding: "10px 16px",
-                  borderRadius: 6,
-                  backgroundColor: "#3b82f6",
-                  color: "white",
-                  border: "none",
-                  fontSize: 14,
-                  cursor: "pointer"
-                }}
-              >
-                Copy Link
-              </button>
-            </div>
-            <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 8 }}>
-              Share this link with others so they can contribute to the payment
-            </p>
-          </div>
 
           {/* Back Button */}
           <button

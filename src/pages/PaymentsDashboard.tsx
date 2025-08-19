@@ -1,5 +1,8 @@
+// Enhanced PaymentsDashboard.tsx with QR Code Support
+
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import QRCode from "react-qr-code";
 import { CollaborativePaymentService } from "./CollaborativePaymentService";
 
 interface RequestSummary {
@@ -17,7 +20,6 @@ interface RequestSummary {
 
 // Configuration for the payment service
 const getPaymentServiceConfig = () => {
-  // Get auth token from localStorage or use environment variable
   const storedUser = localStorage.getItem("user");
   const userAuthToken = storedUser ? JSON.parse(storedUser)?.token || "" : "";
   
@@ -34,6 +36,7 @@ const CollaborativeDashboard = () => {
   const [contributedRequests, setContributedRequests] = useState<RequestSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showQRFor, setShowQRFor] = useState<string | null>(null);
   
   const navigate = useNavigate();
   
@@ -90,6 +93,19 @@ const CollaborativeDashboard = () => {
     }
   };
 
+  // Generate QR URL for a request
+  const generateQRUrl = (requestId: string): string => {
+    const qrData = {
+      type: 'collaborative',
+      requestId: requestId,
+      timestamp: Date.now(),
+      version: '1.0'
+    };
+    
+    const encodedData = btoa(JSON.stringify(qrData));
+    return `${window.location.origin}/request/${requestId}?qr=1&data=${encodedData}`;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ACTIVE": return "#10b981";
@@ -129,8 +145,11 @@ const CollaborativeDashboard = () => {
   const copyRequestLink = (requestId: string) => {
     const link = `${window.location.origin}/request/${requestId}`;
     navigator.clipboard.writeText(link);
-    // Could add a toast notification here
     alert("Request link copied to clipboard!");
+  };
+
+  const toggleQR = (requestId: string) => {
+    setShowQRFor(showQRFor === requestId ? null : requestId);
   };
 
   const RequestCard = ({ request, showActions = true }: { request: RequestSummary; showActions?: boolean }) => (
@@ -234,13 +253,42 @@ const CollaborativeDashboard = () => {
         </span>
       </div>
 
+      {/* QR Code Section - Only show for ACTIVE requests */}
+      {request.status === "ACTIVE" && showQRFor === request.id && (
+        <div style={{
+          backgroundColor: "#1f2937",
+          padding: 16,
+          borderRadius: 8,
+          marginBottom: 16,
+          textAlign: "center"
+        }}>
+          <div style={{
+            backgroundColor: "white",
+            padding: 16,
+            borderRadius: 8,
+            display: "inline-block",
+            marginBottom: 12
+          }}>
+            <QRCode 
+              value={generateQRUrl(request.id)}
+              size={150}
+              style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+            />
+          </div>
+          <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>
+            Scan this QR code to contribute to the payment
+          </p>
+        </div>
+      )}
+
       {/* Actions */}
       {showActions && (
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => navigate(`/request/${request.id}`)}
             style={{
               flex: 1,
+              minWidth: "120px",
               padding: "10px 16px",
               borderRadius: 6,
               backgroundColor: "#3b82f6",
@@ -253,22 +301,41 @@ const CollaborativeDashboard = () => {
           >
             View Details
           </button>
-          {activeTab === "created" && (
-            <button
-              onClick={() => copyRequestLink(request.id)}
-              style={{
-                padding: "10px 16px",
-                borderRadius: 6,
-                backgroundColor: "#6b7280",
-                color: "white",
-                border: "none",
-                fontSize: 14,
-                fontWeight: 500,
-                cursor: "pointer"
-              }}
-            >
-              Share Link
-            </button>
+          
+          {activeTab === "created" && request.status === "ACTIVE" && (
+            <>
+              <button
+                onClick={() => toggleQR(request.id)}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 6,
+                  backgroundColor: showQRFor === request.id ? "#ef4444" : "#10b981",
+                  color: "white",
+                  border: "none",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: "pointer"
+                }}
+              >
+                {showQRFor === request.id ? "Hide QR" : "Show QR"}
+              </button>
+              
+              <button
+                onClick={() => copyRequestLink(request.id)}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 6,
+                  backgroundColor: "#6b7280",
+                  color: "white",
+                  border: "none",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: "pointer"
+                }}
+              >
+                Copy Link
+              </button>
+            </>
           )}
         </div>
       )}

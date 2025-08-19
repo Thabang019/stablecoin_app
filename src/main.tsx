@@ -11,8 +11,8 @@ import ProfilePage from './pages/Profile'
 import SendMoneyPage from './pages/Send'
 import RequestDetailsPage from './pages/RequestDetails'
 import CollaborativeDashboard from './pages/PaymentsDashboard'
-
 import { registerSW } from 'virtual:pwa-register'
+
 
 registerSW({ immediate: true })
 
@@ -27,6 +27,7 @@ createRoot(document.getElementById('root')!).render(
       <Route path="/send" element={<SendMoneyPage />} />
       <Route path="/request/:requestId" element={<RequestDetailsPage />} />
       <Route path="/collaborative" element={<CollaborativeDashboard />} />
+      <Route path="/scan" element={<SendMoneyPage/>} />
     </Routes>
   </BrowserRouter>
 )

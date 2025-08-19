@@ -138,7 +138,7 @@ const Dashboard: React.FC = ()  => {
     {
       icon: <FiCamera className="text-teal-400 text-2xl" />,
       label: 'Scan & Pay',
-      onClick: () => navigate('/pay')
+      onClick: () => navigate('/scan')
     }
   ];
 
