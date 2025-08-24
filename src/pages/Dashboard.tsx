@@ -25,6 +25,7 @@ const Dashboard: React.FC = ()  => {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1280); // Increased breakpoint
   
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -34,6 +35,16 @@ const Dashboard: React.FC = ()  => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   const API_AUTH_TOKEN = import.meta.env.VITE_API_AUTH_TOKEN
 
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1280); // Updated breakpoint
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Function to transform API transaction to UI transaction
   const transformTransaction = (apiTransaction: any): Transaction => {
     const isIncoming = apiTransaction.txType.toLowerCase().includes('from');
@@ -42,7 +53,7 @@ const Dashboard: React.FC = ()  => {
     return {
       id: apiTransaction.id,
       title: apiTransaction.txType,
-      subtitle: `${apiTransaction.method} • ${new Date(apiTransaction.createdAt).toLocaleDateString()}`,
+      subtitle: `${apiTransaction.method} â€¢ ${new Date(apiTransaction.createdAt).toLocaleDateString()}`,
       amount: `${isIncoming ? '+' : isOutgoing ? '-' : ''}R ${apiTransaction.value.toFixed(2)}`,
       type: isIncoming ? 'incoming' : isOutgoing ? 'outgoing' : 'pending',
       status: apiTransaction.status.toLowerCase() === 'complete' ? 'completed' : 'pending',
@@ -126,45 +137,357 @@ const Dashboard: React.FC = ()  => {
 
   const quickActions: QuickAction[] = [
     {
-      icon: <FiSend className="text-teal-400 text-2xl" />,
+      icon: <FiSend style={{ color: 'var(--accent-color)', fontSize: '2rem' }} />,
       label: 'Send',
       onClick: () => navigate('/send')
     },
     {
-      icon: <FaQrcode className="text-teal-400 text-2xl" />,
+      icon: <FaQrcode style={{ color: 'var(--accent-color)', fontSize: '2rem' }} />,
       label: 'Request',
       onClick: () => navigate('/profile')
     },
     {
-      icon: <FiCamera className="text-teal-400 text-2xl" />,
+      icon: <FiCamera style={{ color: 'var(--accent-color)', fontSize: '2rem' }} />,
       label: 'Scan & Pay',
       onClick: () => navigate('/scan')
     }
   ];
 
-  const getTransactionColor = (transaction: Transaction): string => {
-    if (transaction.type === 'incoming') return 'text-green-400';
-    if (transaction.type === 'outgoing') return 'text-red-400';
-    return 'text-yellow-400';
+  const getTransactionColor = (transaction: Transaction): React.CSSProperties => {
+    if (transaction.type === 'incoming') return { color: '#4ade80' };
+    if (transaction.type === 'outgoing') return { color: '#f87171' };
+    return { color: '#facc15' };
   };
 
   const getStatusIcon = (status: string) => {
     if (status === 'completed') {
-      return <FiCheck className="w-4 h-4 text-green-400" />;
+      return <FiCheck style={{ color: '#4ade80', width: '16px', height: '16px' }} />;
     }
-    return <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />;
+    return <div style={{ 
+      width: '8px', 
+      height: '8px', 
+      backgroundColor: '#facc15', 
+      borderRadius: '50%',
+      animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+    }} />;
   };
 
+  if (isDesktop) {
+    // Desktop Layout
+    return (
+      <div style={{ 
+        backgroundColor: 'var(--bg-color)', 
+        minHeight: '100vh', 
+        color: 'rgba(255, 255, 255, 0.87)', 
+        display: 'flex' 
+      }}>
+        {/* Desktop Sidebar */}
+        <div style={{ 
+          width: '280px', // Reduced from 320px
+          minWidth: '280px', // Added for consistency
+          background: 'rgba(255, 255, 255, 0.05)', // More consistent glass effect
+          backdropFilter: 'blur(10px)', 
+          borderRight: '1px solid rgba(255, 255, 255, 0.1)', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          height: '95vh', 
+          overflowY: 'auto' 
+        }}>
+          {/* Desktop Header */}
+          <header style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            padding: '20px', // Reduced padding
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)' 
+          }}>
+            <div>
+              <label style={{ fontSize: '0.75rem', marginBottom: '4px' }}>Welcome back</label>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: '600', margin: '0' }}>{firstName}</h2>
+            </div>
+            <button 
+              style={{
+                background: 'var(--accent-color)',
+                width: '44px', // Slightly smaller
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'white',
+                transition: 'all 0.3s ease'
+              }}
+              aria-label="User profile"
+            >
+              {firstName.charAt(0).toUpperCase()}
+            </button>
+          </header>
+
+          {/* Desktop Balance Card */}
+          <section style={{ 
+            margin: '20px', // Reduced margin
+            padding: '20px', // Reduced padding
+            background: 'rgba(255, 255, 255, 0.05)', 
+            backdropFilter: 'blur(10px)', 
+            borderRadius: '16px', 
+            border: '1px solid rgba(255, 255, 255, 0.1)' 
+          }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.75rem' }}>ZAR Stablecoin Balance</label>
+            <h1 style={{ margin: '8px 0 16px 0', fontSize: '1.75rem' }}>R {balance}</h1> {/* Smaller font */}
+            
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', color: '#4ade80' }}>
+              <FiArrowUpRight style={{ marginRight: '4px' }} /> 
+              <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>+2.4% today</span>
+            </div>
+
+            <div className="decor-line" />
+
+            {/* Wallet Address */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, Liberation Mono, Courier New, monospace' }}>{userId}</p>
+              <button 
+                style={{
+                  color: 'var(--accent-color)',
+                  fontSize: '0.75rem',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'color 0.3s ease'
+                }}
+                onClick={() => navigator.clipboard?.writeText('0x17d0c9ac')}
+              >
+                Copy
+              </button>
+            </div>
+          </section>
+
+          {/* Desktop Quick Actions */}
+          <section style={{ padding: '0 20px 20px', flex: 1 }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '16px' }}>Quick Actions</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {quickActions.map((action, index) => (
+                <button
+                  key={index}
+                  onClick={action.onClick}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px', // Reduced gap
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '12px', // Reduced padding
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    color: 'rgba(255, 255, 255, 0.87)'
+                  }}
+                >
+                  <div style={{ fontSize: '1.5rem' }}>{action.icon}</div> {/* Smaller icons */}
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Desktop Bottom Navigation */}
+          <nav style={{ padding: '30px 20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {[
+                { icon: FiHome, label: 'Home', active: true },
+                { icon: FiSend, label: 'Send', active: false },
+                { icon: FaQrcode, label: 'Request', active: false },
+                { icon: FiUser, label: 'Profile', active: false }
+              ].map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={index}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      transition: 'all 0.3s ease',
+                      backgroundColor: item.active ? 'rgba(100, 108, 255, 0.1)' : 'transparent',
+                      color: item.active ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.6)',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Icon style={{ fontSize: '1rem' }} />
+                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        </div>
+
+        {/* Desktop Main Content */}
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          overflow: 'hidden',
+          maxWidth: 'calc(100vw - 280px)' // Constrain width
+        }}>
+          {/* Desktop Main Header */}
+          <header style={{ 
+            padding: '24px 32px', // Reduced padding
+            background: 'rgba(255, 255, 255, 0.03)', 
+            backdropFilter: 'blur(10px)', 
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)' 
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>Recent Activity</h2>
+              <button style={{
+                color: 'var(--accent-color)',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'color 0.3s ease'
+              }}>
+                View All
+              </button>
+            </div>
+          </header>
+
+          {/* Desktop Recent Activity */}
+          <section style={{ flex: 1, padding: '24px 32px', overflowY: 'auto' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '16px', 
+              maxWidth: '800px', // Constrain max width
+              width: '100%'
+            }}>
+              {isLoading ? (
+                // Loading skeleton
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      backdropFilter: 'blur(10px)',
+                      padding: '20px', // Reduced padding
+                      borderRadius: '16px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <div style={{ opacity: 0.5 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <div style={{ width: '16px', height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%' }}></div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', marginBottom: '8px' }}></div>
+                            <div style={{ height: '12px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', width: '75%' }}></div>
+                          </div>
+                          <div style={{ height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', width: '80px' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : transactions.length === 0 ? (
+                // No transactions state
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '48px',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
+                    <FiClock style={{ width: '48px', height: '48px', margin: '0 auto 16px' }} />
+                    <p style={{ fontSize: '1.125rem', marginBottom: '8px' }}>No transactions yet</p>
+                    <p style={{ fontSize: '1rem' }}>Your recent activity will appear here</p>
+                  </div>
+                </div>
+              ) : (
+                // Real transactions
+                transactions.map((transaction) => (
+                  <div 
+                    key={transaction.id}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      backdropFilter: 'blur(10px)',
+                      padding: '20px', // Reduced padding
+                      borderRadius: '16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      {getStatusIcon(transaction.status)}
+                      <div>
+                        <p style={{ fontWeight: '500', color: 'rgba(255, 255, 255, 0.87)', fontSize: '0.875rem', margin: '0 0 4px 0' }}>{transaction.title}</p>
+                        <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', margin: '0 0 2px 0' }}>{transaction.subtitle}</p>
+                        <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'capitalize', margin: '0' }}>{transaction.status}</p>
+                      </div>
+                    </div>
+                    <p style={{ fontWeight: '600', fontSize: '0.875rem', margin: '0', ...getTransactionColor(transaction) }}>
+                      {transaction.amount}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile Layout
   return (
-    <div className="bg-gray-900 min-h-screen text-white flex flex-col">
+    <div style={{ 
+      backgroundColor: 'var(--bg-color)', 
+      minHeight: '100vh', 
+      color: 'rgba(255, 255, 255, 0.87)', 
+      display: 'flex', 
+      flexDirection: 'column' 
+    }}>
       {/* Header */}
-      <header className="flex justify-between items-center px-4 py-4 bg-gray-800/50 backdrop-blur-sm">
+      <header style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '20px 24px', 
+        background: 'var(--glass-bg)', 
+        backdropFilter: 'blur(10px)' 
+      }}>
         <div>
-          <p className="text-sm text-gray-400">Welcome back,</p>
-          <h1 className="text-xl font-semibold">{firstName}</h1>
+          <label style={{ fontSize: '0.875rem' }}>Welcome back</label>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>{firstName}</h2>
         </div>
         <button 
-          className="bg-teal-500 w-10 h-10 flex items-center justify-center rounded-full text-lg font-bold hover:bg-teal-400 transition-colors"
+          style={{
+            background: 'var(--accent-color)',
+            width: '44px',
+            height: '44px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            fontSize: '1.125rem',
+            fontWeight: 'bold',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'white',
+            transition: 'all 0.3s ease'
+          }}
           aria-label="User profile"
         >
         {firstName.charAt(0).toUpperCase()}
@@ -172,25 +495,36 @@ const Dashboard: React.FC = ()  => {
       </header>
 
       {/* Balance Card */}
-      <section className="m-4 p-6 bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-700/50">
-        <h2 className="text-gray-300 text-sm mb-2">ZAR Stablecoin Balance</h2>
-        <p className="text-3xl font-bold mt-2 mb-4">Money :R {balance}</p>
+      <section style={{ 
+        margin: '24px 24px 16px', 
+        padding: '32px', 
+        background: 'var(--glass-bg)', 
+        backdropFilter: 'blur(10px)', 
+        borderRadius: '24px', 
+        border: '1px solid rgba(255, 255, 255, 0.1)' 
+      }}>
+        <label style={{ display: 'block', marginBottom: '12px' }}>ZAR Stablecoin Balance</label>
+        <h1 style={{ margin: '8px 0 24px 0', fontSize: '2.5rem' }}>R {balance}</h1>
         
-        <div className="flex items-center mb-4 text-green-400">
-          <FiArrowUpRight className="mr-1" /> 
-          <span className="text-sm font-medium">+2.4% today</span>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', color: '#4ade80' }}>
+          <FiArrowUpRight style={{ marginRight: '8px' }} /> 
+          <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>+2.4% today</span>
         </div>
 
-        {/* Enhanced Progress Bar */}
-        <div className="w-full h-2 rounded-full bg-gray-700 overflow-hidden mb-3">
-          <div className="h-full bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-500 w-2/3 rounded-full shadow-lg"></div>
-        </div>
+        <div className="decor-line" />
 
         {/* Wallet Address */}
-        <div className="flex items-center justify-between">
-          <p className="text-gray-500 text-xs font-mono">0x17d0...c9ac</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, Liberation Mono, Courier New, monospace' }}>{ userId}</p>
           <button 
-            className="text-teal-400 text-xs hover:text-teal-300"
+            style={{
+              color: 'var(--accent-color)',
+              fontSize: '0.75rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'color 0.3s ease'
+            }}
             onClick={() => navigator.clipboard?.writeText('0x17d0c9ac')}
           >
             Copy
@@ -199,42 +533,70 @@ const Dashboard: React.FC = ()  => {
       </section>
 
       {/* Quick Actions */}
-      <section className="flex justify-around my-4 px-4 gap-3">
+      <section style={{ display: 'flex', justifyContent: 'center', gap: '16px', margin: '0 24px 24px', padding: '0' }}>
         {quickActions.map((action, index) => (
           <button
             key={index}
             onClick={action.onClick}
-            className="flex flex-col items-center bg-gray-800/50 backdrop-blur-sm p-4 rounded-2xl flex-1 max-w-[100px] hover:bg-gray-700/50 transition-all duration-200 border border-gray-700/30"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'var(--glass-bg)',
+              backdropFilter: 'blur(10px)',
+              padding: '24px',
+              borderRadius: '24px',
+              flex: 1,
+              maxWidth: '110px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              color: 'rgba(255, 255, 255, 0.87)'
+            }}
           >
             {action.icon}
-            <span className="mt-2 text-sm font-medium">{action.label}</span>
+            <span style={{ marginTop: '12px', fontSize: '0.875rem', fontWeight: '500' }}>{action.label}</span>
           </button>
         ))}
       </section>
 
       {/* Recent Activity */}
-      <section className="flex-1 px-4 pb-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Recent Activity</h2>
-          <button className="text-teal-400 text-sm font-medium hover:text-teal-300 transition-colors">
+      <section style={{ flex: 1, padding: '0 24px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>Recent Activity</h3>
+          <button style={{
+            color: 'var(--accent-color)',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'color 0.3s ease'
+          }}>
             View All
           </button>
         </div>
         
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {isLoading ? (
             // Loading skeleton
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-gray-800/50 backdrop-blur-sm p-4 rounded-2xl border border-gray-700/30">
-                  <div className="animate-pulse">
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-600 rounded mb-2"></div>
-                        <div className="h-3 bg-gray-700 rounded w-3/4"></div>
+                <div key={i} style={{
+                  background: 'var(--glass-bg)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '20px',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <div style={{ opacity: 0.5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '16px', height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%' }}></div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', marginBottom: '8px' }}></div>
+                        <div style={{ height: '12px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', width: '75%' }}></div>
                       </div>
-                      <div className="h-4 bg-gray-600 rounded w-20"></div>
+                      <div style={{ height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', width: '80px' }}></div>
                     </div>
                   </div>
                 </div>
@@ -242,11 +604,18 @@ const Dashboard: React.FC = ()  => {
             </div>
           ) : transactions.length === 0 ? (
             // No transactions state
-            <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl border border-gray-700/30 text-center">
-              <div className="text-gray-400 mb-2">
-                <FiClock className="w-8 h-8 mx-auto mb-2" />
-                <p>No transactions yet</p>
-                <p className="text-sm">Your recent activity will appear here</p>
+            <div style={{
+              background: 'var(--glass-bg)',
+              backdropFilter: 'blur(10px)',
+              padding: '40px',
+              borderRadius: '24px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              textAlign: 'center'
+            }}>
+              <div style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
+                <FiClock style={{ width: '40px', height: '40px', margin: '0 auto 12px' }} />
+                <p style={{ fontSize: '1rem', marginBottom: '8px' }}>No transactions yet</p>
+                <p style={{ fontSize: '0.875rem' }}>Your recent activity will appear here</p>
               </div>
             </div>
           ) : (
@@ -254,17 +623,28 @@ const Dashboard: React.FC = ()  => {
             transactions.map((transaction) => (
               <div 
                 key={transaction.id}
-                className="bg-gray-800/50 backdrop-blur-sm p-4 rounded-2xl flex justify-between items-center border border-gray-700/30 hover:bg-gray-700/30 transition-all duration-200"
+                style={{
+                  background: 'var(--glass-bg)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '20px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
               >
-                <div className="flex items-center gap-3">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {getStatusIcon(transaction.status)}
                   <div>
-                    <p className="font-medium text-white">{transaction.title}</p>
-                    <p className="text-sm text-gray-400">{transaction.subtitle}</p>
-                    <p className="text-xs text-gray-500 capitalize">{transaction.status}</p>
+                    <p style={{ fontWeight: '500', color: 'rgba(255, 255, 255, 0.87)', fontSize: '1rem', margin: '0 0 4px 0' }}>{transaction.title}</p>
+                    <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)', margin: '0 0 2px 0' }}>{transaction.subtitle}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'capitalize', margin: '0' }}>{transaction.status}</p>
                   </div>
                 </div>
-                <p className={`font-semibold ${getTransactionColor(transaction)}`}>
+                <p style={{ fontWeight: '600', margin: '0', ...getTransactionColor(transaction) }}>
                   {transaction.amount}
                 </p>
               </div>
@@ -274,24 +654,38 @@ const Dashboard: React.FC = ()  => {
       </section>
 
       {/* Bottom Navigation */}
-      <nav className="bg-gray-800/80 backdrop-blur-sm py-3 px-4 flex justify-around border-t border-gray-700/50">
+      <nav style={{ 
+        background: 'var(--glass-bg)', 
+        backdropFilter: 'blur(10px)', 
+        padding: '16px 24px', 
+        display: 'flex', 
+        justifyContent: 'space-around', 
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)' 
+      }}>
         {[
           { icon: FiHome, label: 'Home', active: true },
           { icon: FiSend, label: 'Send', active: false },
           { icon: FaQrcode, label: 'Request', active: false },
-          { icon: FiClock, label: 'History', active: false },
           { icon: FiUser, label: 'Profile', active: false }
         ].map((item, index) => {
           const Icon = item.icon;
           return (
             <button
               key={index}
-              className={`flex flex-col items-center transition-colors duration-200 ${
-                item.active ? 'text-teal-400' : 'text-gray-400 hover:text-gray-300'
-              }`}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                transition: 'all 0.3s ease',
+                padding: '4px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: item.active ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.6)'
+              }}
             >
-              <Icon className="text-xl mb-1" />
-              <span className="text-xs font-medium">{item.label}</span>
+              <Icon style={{ fontSize: '1.25rem', marginBottom: '8px' }} />
+              <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>{item.label}</span>
             </button>
           );
         })}

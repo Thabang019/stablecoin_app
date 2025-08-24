@@ -1,3 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Your existing custom styles */
 :root {
   --accent-color: #646cff;
   --bg-color: #242424;
@@ -160,5 +165,16 @@ button:focus-visible {
   button {
     background: rgba(0, 0, 0, 0.05);
     color: #213547;
+  }
+}
+
+/* Tailwind component overrides for Dashboard integration */
+@layer components {
+  .glass-button {
+    @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/30 hover:bg-gray-700/50 transition-all duration-200;
+  }
+  
+  .card-glass {
+    @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50;
   }
 }

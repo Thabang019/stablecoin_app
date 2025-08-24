@@ -6,6 +6,16 @@ const ProfilePage = () => {
     lastName: "",
     email: "",
   });
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -38,66 +48,159 @@ const ProfilePage = () => {
     }
   };
 
+  const handleEditProfile = () => {
+    console.log("Edit profile clicked");
+  };
+
   return (
     <div
       style={{
-        maxWidth: 600,
-        margin: "auto",
-        padding: 20,
-        color: "white",
-        backgroundColor: "#121212",
-        borderRadius: 12,
+        backgroundColor: "var(--bg-color)",
+        minHeight: "100vh",
+        padding: isDesktop ? "40px" : "20px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: isDesktop ? "center" : "flex-start"
       }}
     >
-      <h2 style={{ marginBottom: 20 }}>Profile</h2>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: isDesktop ? 500 : "100%",
+          margin: isDesktop ? "0" : "0 auto",
+          padding: isDesktop ? 32 : 20,
+          color: "white",
+          background: "var(--glass-bg)",
+          backdropFilter: "blur(10px)",
+          borderRadius: isDesktop ? 20 : 12,
+          border: "1px solid rgba(255, 255, 255, 0.1)"
+        }}
+      >
+        <h2 style={{ 
+          marginBottom: isDesktop ? 24 : 20, 
+          fontWeight: 600,
+          fontSize: isDesktop ? "1.5rem" : "1.25rem"
+        }}>
+          Profile
+        </h2>
 
-      <div style={{ marginBottom: 12 }}>
-        <label>First Name:</label>
-        <input
-          type="text"
-          value={userData.firstName}
-          readOnly
-          style={{ width: "100%", padding: 8, marginTop: 4, borderRadius: 6 }}
-        />
+        <div style={{ marginBottom: isDesktop ? 20 : 16 }}>
+          <label style={{ 
+            fontSize: isDesktop ? "0.875rem" : "0.75rem", 
+            color: "rgba(255, 255, 255, 0.7)",
+            display: "block",
+            marginBottom: 6
+          }}>
+            First Name:
+          </label>
+          <input
+            type="text"
+            value={userData.firstName}
+            readOnly
+            style={{ 
+              width: "100%", 
+              padding: isDesktop ? 16 : 12, 
+              marginTop: 4, 
+              borderRadius: isDesktop ? 12 : 8,
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "rgba(255, 255, 255, 0.87)",
+              fontSize: isDesktop ? "1rem" : "0.875rem",
+              fontFamily: "inherit"
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: isDesktop ? 20 : 16 }}>
+          <label style={{ 
+            fontSize: isDesktop ? "0.875rem" : "0.75rem", 
+            color: "rgba(255, 255, 255, 0.7)",
+            display: "block",
+            marginBottom: 6
+          }}>
+            Last Name:
+          </label>
+          <input
+            type="text"
+            value={userData.lastName}
+            readOnly
+            style={{ 
+              width: "100%", 
+              padding: isDesktop ? 16 : 12, 
+              marginTop: 4, 
+              borderRadius: isDesktop ? 12 : 8,
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "rgba(255, 255, 255, 0.87)",
+              fontSize: isDesktop ? "1rem" : "0.875rem",
+              fontFamily: "inherit"
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: isDesktop ? 28 : 24 }}>
+          <label style={{ 
+            fontSize: isDesktop ? "0.875rem" : "0.75rem", 
+            color: "rgba(255, 255, 255, 0.7)",
+            display: "block",
+            marginBottom: 6
+          }}>
+            Email:
+          </label>
+          <input
+            type="email"
+            value={userData.email}
+            readOnly
+            style={{ 
+              width: "100%", 
+              padding: isDesktop ? 16 : 12, 
+              marginTop: 4, 
+              borderRadius: isDesktop ? 12 : 8,
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "rgba(255, 255, 255, 0.87)",
+              fontSize: isDesktop ? "1rem" : "0.875rem",
+              fontFamily: "inherit"
+            }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+          <button
+            onClick={handleEditProfile}
+            style={{
+              padding: "12px 20px",
+              background: "var(--accent-color)",
+              color: "white",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+              transition: "all 0.3s ease"
+            }}
+          >
+            Edit Profile
+          </button>
+          
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: "12px 20px",
+              background: "rgba(248, 113, 113, 0.1)",
+              color: "#f87171",
+              border: "1px solid rgba(248, 113, 113, 0.2)",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+              transition: "all 0.3s ease"
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </div>
-
-      <div style={{ marginBottom: 12 }}>
-        <label>Last Name:</label>
-        <input
-          type="text"
-          value={userData.lastName}
-          readOnly
-          style={{ width: "100%", padding: 8, marginTop: 4, borderRadius: 6 }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 12 }}>
-        <label>Email:</label>
-        <input
-          type="email"
-          value={userData.email}
-          readOnly
-          style={{ width: "100%", padding: 8, marginTop: 4, borderRadius: 6 }}
-        />
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
-        <button
-          onClick={handleLogout}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#dc3545",
-            color: "white",
-            border: "none",
-            borderRadius: 6,
-            cursor: "pointer",
-            fontSize: "14px",
-          }}
-        >
-          Logout
-        </button>
-      </div>
-
     </div>
   );
 };
