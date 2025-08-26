@@ -284,17 +284,25 @@ const SendMoneyPage = () => {
   };
 
   return (
-    <div
-      style={{
+    <div style={{
+      backgroundColor: "var(--bg-color)",
+      minHeight: "100vh",
+      padding: "20px",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "flex-start"
+    }}>
+      <div style={{
+        width: "100%",
         maxWidth: 500,
-        margin: "auto",
-        padding: 24,
+        margin: "0 auto",
+        padding: 32,
         color: "white",
-        backgroundColor: "#1f2937",
-        borderRadius: 16,
-        boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-      }}
-    >
+        background: "var(--glass-bg)",
+        backdropFilter: "blur(10px)",
+        borderRadius: 20,
+        border: "1px solid rgba(255, 255, 255, 0.1)"
+      }}>
       <h2 style={{ 
         marginBottom: 24, 
         fontSize: 24,
@@ -381,9 +389,9 @@ const SendMoneyPage = () => {
           style={{ 
             width: "100%", 
             padding: 12, 
-            borderRadius: 8,
-            border: "1px solid #374151",
-            backgroundColor: "#374151",
+            borderRadius: 12,
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            background: "rgba(255, 255, 255, 0.05)",
             color: "white",
             fontSize: 16
           }}
@@ -410,9 +418,9 @@ const SendMoneyPage = () => {
           style={{ 
             width: "100%", 
             padding: 12, 
-            borderRadius: 8,
-            border: "1px solid #374151",
-            backgroundColor: "#374151",
+            borderRadius: 12,
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            background: "rgba(255, 255, 255, 0.05)",
             color: "white",
             fontSize: 16
           }}
@@ -439,9 +447,9 @@ const SendMoneyPage = () => {
               style={{ 
                 width: "100%", 
                 padding: 12, 
-                borderRadius: 8,
-                border: "1px solid #374151",
-                backgroundColor: "#374151",
+                borderRadius: 12,
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                background: "rgba(255, 255, 255, 0.05)",
                 color: "white",
                 fontSize: 16
               }}
@@ -464,9 +472,9 @@ const SendMoneyPage = () => {
               style={{ 
                 width: "100%", 
                 padding: 12, 
-                borderRadius: 8,
-                border: "1px solid #374151",
-                backgroundColor: "#374151",
+                borderRadius: 12,
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                background: "rgba(255, 255, 255, 0.05)",
                 color: "white",
                 fontSize: 16
               }}
@@ -505,9 +513,9 @@ const SendMoneyPage = () => {
                 style={{ 
                   width: "100%", 
                   padding: 12, 
-                  borderRadius: 8,
-                  border: "1px solid #374151",
-                  backgroundColor: "#374151",
+                  borderRadius: 12,
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  background: "rgba(255, 255, 255, 0.05)",
                   color: "white",
                   fontSize: 16
                 }}
@@ -540,9 +548,9 @@ const SendMoneyPage = () => {
               style={{ 
                 width: "100%", 
                 padding: 12, 
-                borderRadius: 8,
-                border: "1px solid #374151",
-                backgroundColor: "#374151",
+                borderRadius: 12,
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                background: "rgba(255, 255, 255, 0.05)",
                 color: "white",
                 fontSize: 16
               }}
@@ -573,9 +581,9 @@ const SendMoneyPage = () => {
           style={{ 
             width: "100%", 
             padding: 12, 
-            borderRadius: 8,
-            border: "1px solid #374151",
-            backgroundColor: "#374151",
+            borderRadius: 12,
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            background: "rgba(255, 255, 255, 0.05)",
             color: "white",
             fontSize: 16
           }}
@@ -591,7 +599,7 @@ const SendMoneyPage = () => {
         disabled={isLoading}
         style={{
           padding: "14px 20px",
-          borderRadius: 8,
+          borderRadius: 12,
           backgroundColor: isLoading ? "#6b7280" : "#0d9488",
           color: "white",
           width: "100%",
@@ -600,7 +608,7 @@ const SendMoneyPage = () => {
           fontSize: 16,
           fontWeight: 600,
           cursor: isLoading ? "not-allowed" : "pointer",
-          transition: "background-color 0.2s"
+          transition: "all 0.3s ease"
         }}
       >
         {isLoading ? "Processing..." : isCollaborative ? "Create Payment Request" : "Send Money"}
@@ -612,18 +620,20 @@ const SendMoneyPage = () => {
           disabled={isLoading}
           style={{
             padding: "12px 20px",
-            borderRadius: 8,
-            backgroundColor: "#374151",
+            borderRadius: 12,
+            background: "rgba(255, 255, 255, 0.05)",
             color: "white",
             width: "100%",
-            border: "1px solid #4b5563",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
             fontSize: 14,
             cursor: isLoading ? "not-allowed" : "pointer",
+            transition: "all 0.3s ease"
           }}
         >
           Switch to Direct Send
         </button>
       )}
+      </div>
     </div>
   );
 };

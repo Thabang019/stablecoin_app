@@ -154,13 +154,14 @@ const CollaborativeDashboard = () => {
 
   const RequestCard = ({ request, showActions = true }: { request: RequestSummary; showActions?: boolean }) => (
     <div style={{
-      backgroundColor: "#374151",
-      borderRadius: 12,
-      padding: 20,
-      marginBottom: 16,
+      background: "var(--glass-bg)",
+      backdropFilter: "blur(10px)",
+      borderRadius: 16,
       border: request.status === "ACTIVE" && isExpiringSoon(request.expiryDate) 
         ? "2px solid #f59e0b" 
-        : "1px solid #4b5563"
+        : "1px solid rgba(255, 255, 255, 0.1)",
+      padding: 20,
+      marginBottom: 16
     }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
@@ -256,9 +257,9 @@ const CollaborativeDashboard = () => {
       {/* QR Code Section - Only show for ACTIVE requests */}
       {request.status === "ACTIVE" && showQRFor === request.id && (
         <div style={{
-          backgroundColor: "#1f2937",
+          background: "rgba(255, 255, 255, 0.03)",
           padding: 16,
-          borderRadius: 8,
+          borderRadius: 12,
           marginBottom: 16,
           textAlign: "center"
         }}>
@@ -290,13 +291,14 @@ const CollaborativeDashboard = () => {
               flex: 1,
               minWidth: "120px",
               padding: "10px 16px",
-              borderRadius: 6,
-              backgroundColor: "#3b82f6",
+              borderRadius: 8,
+              background: "var(--accent-color)",
               color: "white",
               border: "none",
               fontSize: 14,
               fontWeight: 500,
-              cursor: "pointer"
+              cursor: "pointer",
+              transition: "all 0.3s ease"
             }}
           >
             View Details
@@ -308,13 +310,14 @@ const CollaborativeDashboard = () => {
                 onClick={() => toggleQR(request.id)}
                 style={{
                   padding: "10px 16px",
-                  borderRadius: 6,
+                  borderRadius: 8,
                   backgroundColor: showQRFor === request.id ? "#ef4444" : "#10b981",
                   color: "white",
                   border: "none",
                   fontSize: 14,
                   fontWeight: 500,
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  transition: "all 0.3s ease"
                 }}
               >
                 {showQRFor === request.id ? "Hide QR" : "Show QR"}
@@ -324,13 +327,14 @@ const CollaborativeDashboard = () => {
                 onClick={() => copyRequestLink(request.id)}
                 style={{
                   padding: "10px 16px",
-                  borderRadius: 6,
-                  backgroundColor: "#6b7280",
+                  borderRadius: 8,
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
                   color: "white",
-                  border: "none",
                   fontSize: 14,
                   fontWeight: 500,
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  transition: "all 0.3s ease"
                 }}
               >
                 Copy Link
@@ -366,8 +370,10 @@ const CollaborativeDashboard = () => {
         margin: "auto",
         padding: 24,
         color: "white",
-        backgroundColor: "#1f2937",
-        borderRadius: 16,
+        background: "var(--glass-bg)",
+        backdropFilter: "blur(10px)",
+        borderRadius: 20,
+        border: "1px solid rgba(255, 255, 255, 0.1)",
         textAlign: "center"
       }}>
         <h2>Authentication Required</h2>
@@ -376,11 +382,12 @@ const CollaborativeDashboard = () => {
           onClick={() => navigate("/login")}
           style={{
             padding: "12px 24px",
-            backgroundColor: "#3b82f6",
+            background: "var(--accent-color)",
             color: "white",
             border: "none",
-            borderRadius: 8,
-            cursor: "pointer"
+            borderRadius: 12,
+            cursor: "pointer",
+            transition: "all 0.3s ease"
           }}
         >
           Go to Login

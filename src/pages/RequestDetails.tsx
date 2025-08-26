@@ -317,14 +317,24 @@ const RequestDetailsPage = () => {
 
   return (
     <div style={{
-      maxWidth: 600,
-      margin: "auto",
-      padding: 24,
-      color: "white",
-      backgroundColor: "#1f2937",
-      borderRadius: 16,
-      boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+      backgroundColor: "var(--bg-color)",
+      minHeight: "100vh",
+      padding: "20px",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "flex-start"
     }}>
+      <div style={{
+        width: "100%",
+        maxWidth: 600,
+        margin: "0 auto",
+        padding: 32,
+        color: "white",
+        background: "var(--glass-bg)",
+        backdropFilter: "blur(10px)",
+        borderRadius: 20,
+        border: "1px solid rgba(255, 255, 255, 0.1)"
+      }}>
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 8 }}>
@@ -339,9 +349,11 @@ const RequestDetailsPage = () => {
         <>
           {/* Status and Description */}
           <div style={{ 
-            backgroundColor: "#374151", 
+            background: "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
             padding: 20, 
-            borderRadius: 12, 
+            borderRadius: 16,
+            border: "1px solid rgba(255, 255, 255, 0.1)",
             marginBottom: 20 
           }}>
             <div style={{ 
@@ -375,9 +387,11 @@ const RequestDetailsPage = () => {
 
           {/* Progress Section */}
           <div style={{ 
-            backgroundColor: "#374151", 
+            background: "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
             padding: 20, 
-            borderRadius: 12, 
+            borderRadius: 16,
+            border: "1px solid rgba(255, 255, 255, 0.1)",
             marginBottom: 20 
           }}>
             <div style={{ marginBottom: 16 }}>
@@ -458,9 +472,11 @@ const RequestDetailsPage = () => {
           {/* QR Code Section - Show for active requests */}
           {requestDetails.status === "ACTIVE" && (
             <div style={{ 
-              backgroundColor: "#374151", 
+              background: "rgba(255, 255, 255, 0.05)",
+              backdropFilter: "blur(10px)",
               padding: 20, 
-              borderRadius: 12, 
+              borderRadius: 16,
+              border: "1px solid rgba(255, 255, 255, 0.1)",
               marginBottom: 20 
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -470,11 +486,12 @@ const RequestDetailsPage = () => {
                   style={{
                     padding: "8px 16px",
                     borderRadius: 6,
-                    backgroundColor: "#3b82f6",
+                    background: "var(--accent-color)",
                     color: "white",
                     border: "none",
                     fontSize: 14,
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    transition: "all 0.3s ease"
                   }}
                 >
                   {showQR ? "Hide QR" : "Show QR Code"}
@@ -517,8 +534,8 @@ const RequestDetailsPage = () => {
                     flex: 1,
                     padding: 10,
                     borderRadius: 6,
-                    border: "1px solid #4b5563",
-                    backgroundColor: "#1f2937",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    background: "rgba(255, 255, 255, 0.05)",
                     color: "#9ca3af",
                     fontSize: 14
                   }}
@@ -531,11 +548,12 @@ const RequestDetailsPage = () => {
                   style={{
                     padding: "10px 16px",
                     borderRadius: 6,
-                    backgroundColor: "#3b82f6",
+                    background: "var(--accent-color)",
                     color: "white",
                     border: "none",
                     fontSize: 14,
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    transition: "all 0.3s ease"
                   }}
                 >
                   Copy Link
@@ -550,16 +568,18 @@ const RequestDetailsPage = () => {
           {/* Contribution Form */}
           {canUserContribute() && requestDetails.status === "ACTIVE" && (
             <div style={{ 
-              backgroundColor: "#374151", 
+              background: "rgba(255, 255, 255, 0.05)",
+              backdropFilter: "blur(10px)",
               padding: 20, 
-              borderRadius: 12, 
+              borderRadius: 16,
+              border: "1px solid rgba(255, 255, 255, 0.1)",
               marginBottom: 20 
             }}>
               <h3 style={{ marginBottom: 16, fontSize: 18 }}>Make a Contribution</h3>
               
               {requestDetails.splitType === "EQUAL" && (
                 <div style={{ 
-                  backgroundColor: "#1f2937", 
+                  background: "rgba(255, 255, 255, 0.03)",
                   padding: 12, 
                   borderRadius: 8, 
                   marginBottom: 16,
@@ -591,9 +611,9 @@ const RequestDetailsPage = () => {
                   style={{ 
                     width: "100%", 
                     padding: 12, 
-                    borderRadius: 8,
-                    border: "1px solid #4b5563",
-                    backgroundColor: "#1f2937",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    background: "rgba(255, 255, 255, 0.05)",
                     color: "white",
                     fontSize: 16
                   }}
@@ -617,9 +637,9 @@ const RequestDetailsPage = () => {
                   style={{ 
                     width: "100%", 
                     padding: 12, 
-                    borderRadius: 8,
-                    border: "1px solid #4b5563",
-                    backgroundColor: "#1f2937",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    background: "rgba(255, 255, 255, 0.05)",
                     color: "white",
                     fontSize: 16
                   }}
@@ -632,14 +652,14 @@ const RequestDetailsPage = () => {
                 style={{
                   width: "100%",
                   padding: "14px 20px",
-                  borderRadius: 8,
+                  borderRadius: 12,
                   backgroundColor: isContributing ? "#6b7280" : "#0d9488",
                   color: "white",
                   border: "none",
                   fontSize: 16,
                   fontWeight: 600,
                   cursor: (isContributing || !contributionAmount) ? "not-allowed" : "pointer",
-                  transition: "background-color 0.2s"
+                  transition: "all 0.3s ease"
                 }}
               >
                 {isContributing ? "Processing Payment..." : "Contribute Now"}
@@ -650,9 +670,11 @@ const RequestDetailsPage = () => {
           {/* Status Messages for Non-Contributing Users */}
           {!canUserContribute() && requestDetails.status === "ACTIVE" && (
             <div style={{ 
-              backgroundColor: "#374151", 
+              background: "rgba(255, 255, 255, 0.05)",
+              backdropFilter: "blur(10px)",
               padding: 20, 
-              borderRadius: 12, 
+              borderRadius: 16,
+              border: "1px solid rgba(255, 255, 255, 0.1)",
               marginBottom: 20,
               textAlign: "center" 
             }}>
@@ -663,11 +685,12 @@ const RequestDetailsPage = () => {
                     onClick={() => navigate("/login")}
                     style={{
                       padding: "12px 24px",
-                      backgroundColor: "#3b82f6",
+                      background: "var(--accent-color)",
                       color: "white",
                       border: "none",
-                      borderRadius: 8,
-                      cursor: "pointer"
+                      borderRadius: 12,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease"
                     }}
                   >
                     Go to Login
@@ -688,12 +711,12 @@ const RequestDetailsPage = () => {
 
           {requestDetails.status === "COMPLETED" && (
             <div style={{ 
-              backgroundColor: "#065f46", 
+              background: "rgba(16, 185, 129, 0.1)",
               padding: 20, 
-              borderRadius: 12, 
+              borderRadius: 16,
               marginBottom: 20,
               textAlign: "center",
-              border: "2px solid #10b981"
+              border: "1px solid #10b981"
             }}>
               <h3 style={{ color: "#10b981", margin: 0, marginBottom: 8 }}>🎉 Payment Completed!</h3>
               <p style={{ margin: 0, color: "#d1fae5" }}>
@@ -705,12 +728,12 @@ const RequestDetailsPage = () => {
 
           {requestDetails.status === "EXPIRED" && (
             <div style={{ 
-              backgroundColor: "#7f1d1d", 
+              background: "rgba(239, 68, 68, 0.1)",
               padding: 20, 
-              borderRadius: 12, 
+              borderRadius: 16,
               marginBottom: 20,
               textAlign: "center",
-              border: "2px solid #ef4444"
+              border: "1px solid #ef4444"
             }}>
               <h3 style={{ color: "#ef4444", margin: 0, marginBottom: 8 }}>⏰ Payment Expired</h3>
               <p style={{ margin: 0, color: "#fecaca" }}>
@@ -722,9 +745,11 @@ const RequestDetailsPage = () => {
           {/* Contributors List */}
           {requestDetails.contributions.length > 0 && (
             <div style={{ 
-              backgroundColor: "#374151", 
+              background: "rgba(255, 255, 255, 0.05)",
+              backdropFilter: "blur(10px)",
               padding: 20, 
-              borderRadius: 12, 
+              borderRadius: 16,
+              border: "1px solid rgba(255, 255, 255, 0.1)",
               marginBottom: 20 
             }}>
               <h3 style={{ marginBottom: 16, fontSize: 18 }}>
@@ -738,7 +763,7 @@ const RequestDetailsPage = () => {
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "12px 0",
-                    borderBottom: index < requestDetails.contributions.length - 1 ? "1px solid #4b5563" : "none"
+                    borderBottom: index < requestDetails.contributions.length - 1 ? "1px solid rgba(255, 255, 255, 0.1)" : "none"
                   }}>
                     <div>
                       <p style={{ margin: 0, fontSize: 14, fontWeight: 500 }}>
@@ -777,18 +802,20 @@ const RequestDetailsPage = () => {
             style={{
               width: "100%",
               padding: "12px 20px",
-              borderRadius: 8,
-              backgroundColor: "#6b7280",
+              borderRadius: 12,
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
               color: "white",
-              border: "none",
               fontSize: 16,
-              cursor: "pointer"
+              cursor: "pointer",
+              transition: "all 0.3s ease"
             }}
           >
             Back to Dashboard
           </button>
         </>
       )}
+      </div>
     </div>
   );
 };
