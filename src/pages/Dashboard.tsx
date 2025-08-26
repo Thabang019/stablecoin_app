@@ -183,7 +183,7 @@ const Dashboard: React.FC = ()  => {
       }}>
         {/* Desktop Sidebar */}
         <div style={{ 
-          width: '280px', // Reduced from 320px
+          width: '500px', // Reduced from 320px
           minWidth: '280px', // Added for consistency
           background: 'rgba(255, 255, 255, 0.05)', // More consistent glass effect
           backdropFilter: 'blur(10px)', 
@@ -297,7 +297,7 @@ const Dashboard: React.FC = ()  => {
 
           {/* Desktop Bottom Navigation */}
           <nav style={{ padding: '30px 20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '4px' }}>
               {[
                 { icon: FiHome, label: 'Home', active: true },
                 { icon: FiSend, label: 'Send', active: false },

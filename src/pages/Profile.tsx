@@ -66,9 +66,9 @@ const ProfilePage = () => {
       <div
         style={{
           width: "100%",
-          maxWidth: isDesktop ? 500 : "100%",
+          maxWidth: isDesktop ? 700 : "100%",
           margin: isDesktop ? "0" : "0 auto",
-          padding: isDesktop ? 32 : 20,
+          padding: isDesktop ? 75 : 30,
           color: "white",
           background: "var(--glass-bg)",
           backdropFilter: "blur(10px)",

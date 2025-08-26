@@ -600,7 +600,7 @@ const SendMoneyPage = () => {
         style={{
           padding: "14px 20px",
           borderRadius: 12,
-          backgroundColor: isLoading ? "#6b7280" : "#0d9488",
+          backgroundColor: isLoading ? "#6b7280" : "#233332ff",
           color: "white",
           width: "100%",
           marginBottom: 12,
