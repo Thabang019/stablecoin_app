@@ -22,6 +22,16 @@ interface CreateRequestResponse {
   // Add other fields as needed
 }
 
+interface WhatsAppNotificationData {
+  to: string;
+  from?: string;
+  message: string;
+  firstName?: string;
+  lastName?:string;
+  amount?: string;
+  currency?: string;
+}
+
 const SendMoneyPage = () => {
   const [recipientEmail, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
@@ -40,6 +50,8 @@ const SendMoneyPage = () => {
   const navigate = useNavigate();
 
   const userId = user?.user?.id;
+  const firstName = user?.user?.firstName;
+  const lastName = user?.user?.lastName;
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const API_AUTH_TOKEN = import.meta.env.VITE_API_AUTH_TOKEN;
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -49,6 +61,67 @@ const SendMoneyPage = () => {
     BACKEND_URL,
     userId
   });
+
+  const formatPhoneForWhatsApp = (phoneNumber: string): string => {
+    if (!phoneNumber) return '';
+    
+    const cleaned = phoneNumber.replace(/\D/g, '');
+    
+    if (cleaned.startsWith('0') && cleaned.length === 10) {
+      return '27' + cleaned.substring(1);
+    } else if (cleaned.startsWith('27') && cleaned.length === 11) {
+      return cleaned;
+    } else if (cleaned.startsWith('27') && cleaned.length === 12) {
+      return cleaned.substring(0, 11);
+    } else if (cleaned.length === 9) {
+      return '27' + cleaned;
+    }
+    return cleaned;
+  };
+
+  
+  const sendWhatsAppNotification = async (data: WhatsAppNotificationData) => {
+
+    try {
+      const formattedPhone = formatPhoneForWhatsApp(data.to);
+      
+      if (!formattedPhone) {
+        console.warn('Invalid phone number format:', data.to);
+        return;
+      }
+
+      console.log(`Sending WhatsApp to: ${data.to} -> formatted: ${formattedPhone}`);
+
+      const whatsappResponse = await fetch(`https://graph.facebook.com/v20.0/${import.meta.env.VITE_WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: formattedPhone,
+          type: 'text',
+          text: {
+            body: data.message
+          }
+        })
+      });
+
+      if (whatsappResponse.ok) {
+        const responseData = await whatsappResponse.json();
+        console.log('WhatsApp message sent successfully:', responseData);
+        return responseData;
+      } else {
+        const errorData = await whatsappResponse.json();
+        console.error('WhatsApp API error:', errorData);
+        throw new Error(`WhatsApp API failed: ${whatsappResponse.status}`);
+      }
+
+    } catch (error) {
+      console.error('WhatsApp notification error:', error);
+    }
+  };
 
   /** ✅ Validation */
   const validateDirectSend = (): boolean => {
@@ -152,6 +225,29 @@ const SendMoneyPage = () => {
         return;
       }
 
+      //Add whatsapp notification
+      const recipientResponse = await fetch(`${BACKEND_URL}/api/user/email/${recipientEmail}`, {
+          headers: { "Content-Type": "application/json" }
+        });
+
+        if (recipientResponse.ok) {
+          const recipient_data = await recipientResponse.json();
+          console.log("RR",recipient_data)
+          const recipientPhoneNumber = recipient_data.phoneNumber;
+          console.log(recipientPhoneNumber)
+
+           if (recipientPhoneNumber) {
+              await sendWhatsAppNotification({
+                to: recipientPhoneNumber,
+                message: `💰 You received ${amount} ${currency} from ${firstName} ${lastName}! Check your wallet to see the transaction.`,
+                firstName,
+                lastName,
+                amount,
+                currency
+              });
+            }
+          }
+    
       const transferResponse = await transferCoins.json();
       console.log("Transfer successful:", transferResponse);
 

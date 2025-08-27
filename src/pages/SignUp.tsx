@@ -7,6 +7,8 @@ const SignUpPage = () => {
   const [lastName, setLastName] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
+
   const navigate = useNavigate()
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   const API_AUTH_TOKEN = import.meta.env.VITE_API_AUTH_TOKEN
@@ -50,6 +52,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           password,
           userId: data.user.id,
           role: "User",
+          phoneNumber,
         }),
       })
 
@@ -121,6 +124,16 @@ const handleSubmit = async (e: React.FormEvent) => {
             type="password"
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
+            required
+            style={{ width: '100%', padding: 8 }}
+          />
+        </div>
+         <div style={{ marginBottom: 12 }}>
+          <label>Phone Number</label><br />
+          <input
+            type="text"
+            value={phoneNumber}
+            onChange={e => setPhoneNumber(e.target.value)}
             required
             style={{ width: '100%', padding: 8 }}
           />
