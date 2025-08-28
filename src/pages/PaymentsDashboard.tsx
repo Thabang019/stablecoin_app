@@ -22,7 +22,7 @@ const getPaymentServiceConfig = () => {
   const userAuthToken = storedUser ? JSON.parse(storedUser)?.token || "" : "";
   
   return {
-    backendUrl: import.meta.env.VITE_BACKEND_URL || "http://localhost:8080",
+    backendUrl: import.meta.env.VITE_BACKEND_URL || "https://zarstablecoin-app.onrender.com",
     rapydBaseUrl: import.meta.env.VITE_API_BASE_URL || "https://seal-app-qp9cc.ondigitalocean.app/api/v1",
     authToken: userAuthToken || import.meta.env.VITE_API_AUTH_TOKEN || ""
   };

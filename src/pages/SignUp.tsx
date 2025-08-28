@@ -42,7 +42,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       return
     }
 
-      const saveResponse = await fetch("http://localhost:8080/api/user/save", {
+      const saveResponse = await fetch("https://zarstablecoin-app.onrender.com/api/user/save", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
