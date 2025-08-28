@@ -266,11 +266,6 @@ const RequestDetailsPage = () => {
     return !hasContributed;
   };
 
-  // Check if current user is the creator of this request
-  const isRequestCreator = () => {
-    return userId && requestDetails?.merchantId === userId;
-  };
-
   if (isLoading) {
     return (
       <div style={{ 

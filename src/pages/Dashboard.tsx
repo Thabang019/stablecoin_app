@@ -1,7 +1,7 @@
 import React from 'react';
-import { FiSend, FiCamera, FiUser, FiClock, FiHome, FiArrowUpRight, FiCheck } from 'react-icons/fi';
+import { FiSend, FiCamera, FiUser, FiClock, FiHome, FiArrowUpRight, FiCheck, FiChevronDown, FiFilter } from 'react-icons/fi';
 import { FaQrcode } from 'react-icons/fa';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from 'react-router-dom'
 
 // Types for better TypeScript support
@@ -25,7 +25,13 @@ const Dashboard: React.FC = ()  => {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1280); // Increased breakpoint
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1280);
+  
+  // New state for transaction display management
+  const [displayCount, setDisplayCount] = useState(5); // Show 5 transactions initially
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'incoming' | 'outgoing' | 'pending'>('all');
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -38,12 +44,29 @@ const Dashboard: React.FC = ()  => {
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1280); // Updated breakpoint
+      setIsDesktop(window.innerWidth >= 1280);
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Filter and limit transactions
+  const filteredTransactions = useMemo(() => {
+    let filtered = transactions;
+    
+    // Apply filter
+    if (filterType !== 'all') {
+      filtered = transactions.filter(t => t.type === filterType);
+    }
+    
+    // Apply display limit
+    if (!showAllTransactions) {
+      filtered = filtered.slice(0, displayCount);
+    }
+    
+    return filtered;
+  }, [transactions, filterType, showAllTransactions, displayCount]);
 
   // Function to transform API transaction to UI transaction
   const transformTransaction = (apiTransaction: any): Transaction => {
@@ -53,7 +76,7 @@ const Dashboard: React.FC = ()  => {
     return {
       id: apiTransaction.id,
       title: apiTransaction.txType,
-      subtitle: `${apiTransaction.method} â€¢ ${new Date(apiTransaction.createdAt).toLocaleDateString()}`,
+      subtitle: `${apiTransaction.method} on ${new Date(apiTransaction.createdAt).toLocaleDateString()} at ${new Date(apiTransaction.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
       amount: `${isIncoming ? '+' : isOutgoing ? '-' : ''}R ${apiTransaction.value.toFixed(2)}`,
       type: isIncoming ? 'incoming' : isOutgoing ? 'outgoing' : 'pending',
       status: apiTransaction.status.toLowerCase() === 'complete' ? 'completed' : 'pending',
@@ -77,7 +100,6 @@ const Dashboard: React.FC = ()  => {
         return;
       }
 
-      // Access the tokens array
       const tokensArray = data.tokens;
       const zarToken = tokensArray.find((t: { name: string }) => t.name.includes("ZAR"));
       const zarBalance = zarToken.balance;
@@ -108,12 +130,11 @@ const Dashboard: React.FC = ()  => {
 
       console.log("Transactions:", transactionData);
       
-      // Transform and set transactions
       const transformedTransactions = transactionData.transactions
         .map(transformTransaction)
         .sort((a: Transaction, b: Transaction) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        ); // Sort by newest first
+        );
       
       setTransactions(transformedTransactions);
 
@@ -144,13 +165,8 @@ const Dashboard: React.FC = ()  => {
     {
       icon: <FaQrcode style={{ color: 'var(--accent-color)', fontSize: '2rem' }} />,
       label: 'Request',
-      onClick: () => navigate('/profile')
+      onClick: () => navigate('/collaborative')
     },
-    {
-      icon: <FiCamera style={{ color: 'var(--accent-color)', fontSize: '2rem' }} />,
-      label: 'Scan & Pay',
-      onClick: () => navigate('/scan')
-    }
   ];
 
   const getTransactionColor = (transaction: Transaction): React.CSSProperties => {
@@ -172,8 +188,155 @@ const Dashboard: React.FC = ()  => {
     }} />;
   };
 
+  // Compact Transaction Component
+  const CompactTransaction = ({ transaction }: { transaction: Transaction }) => (
+    <div 
+      style={{
+        background: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(10px)',
+        padding: '15px 20px',
+        borderRadius: '12px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        transition: 'all 0.3s ease',
+        cursor: 'pointer'
+      }}
+      onClick={() => console.log('Transaction clicked:', transaction.id)}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {getStatusIcon(transaction.status)}
+        <div style={{ minWidth: 0 }}>
+          <p style={{ 
+            fontWeight: '500', 
+            color: 'rgba(255, 255, 255, 0.87)', 
+            fontSize: '0.875rem', 
+            margin: '0 0 2px 0',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {transaction.title}
+          </p>
+          <p style={{ 
+            fontSize: '0.75rem', 
+            color: 'rgba(255, 255, 255, 0.6)', 
+            margin: '0',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {transaction.subtitle}
+          </p>
+        </div>
+      </div>
+      <div style={{ textAlign: 'right', minWidth: 'fit-content' }}>
+        <p style={{ 
+          fontWeight: '600', 
+          fontSize: '0.875rem', 
+          margin: '0 0 2px 0', 
+          ...getTransactionColor(transaction) 
+        }}>
+          {transaction.amount}
+        </p>
+        <p style={{ 
+          fontSize: '0.75rem', 
+          color: 'rgba(255, 255, 255, 0.5)', 
+          textTransform: 'capitalize', 
+          margin: '0' 
+        }}>
+          {transaction.status}
+        </p>
+      </div>
+    </div>
+  );
+
+  // Filter Buttons Component
+  const FilterButtons = () => (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between',
+      marginBottom: '16px',
+      overflowX: 'auto',
+      paddingBottom: '4px'
+    }}>
+      {[
+        { key: 'all', label: 'All' },
+        { key: 'incoming', label: 'Received' },
+        { key: 'outgoing', label: 'Sent' },
+        { key: 'pending', label: 'Pending' }
+      ].map((filter) => (
+        <button
+          key={filter.key}
+          onClick={() => setFilterType(filter.key as any)}
+          style={{
+            padding: '6px 20px',
+            
+            borderRadius: '20px',
+            fontSize: '0.75rem',
+            fontWeight: '500',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: filterType === filter.key 
+              ? 'var(--accent-color)' 
+              : 'rgba(255, 255, 255, 0.05)',
+            color: filterType === filter.key 
+              ? 'white' 
+              : 'rgba(255, 255, 255, 0.7)',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {filter.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  // Load More Button Component
+  const LoadMoreButton = () => {
+    if (filteredTransactions.length >= (filterType === 'all' ? transactions.length : transactions.filter(t => t.type === filterType).length)) {
+      return null;
+    }
+
+    return (
+      <button
+        onClick={() => {
+          if (showAllTransactions) {
+            setShowAllTransactions(false);
+            setDisplayCount(5);
+          } else {
+            setDisplayCount(prev => prev + 5);
+          }
+        }}
+        style={{
+          width: '100%',
+          padding: '12px',
+          marginTop: '16px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '12px',
+          color: 'var(--accent-color)',
+          fontSize: '0.875rem',
+          fontWeight: '500',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }}
+      >
+        Load More Transactions
+        <FiChevronDown style={{ fontSize: '1rem' }} />
+      </button>
+    );
+  };
+
   if (isDesktop) {
-    // Desktop Layout
+    // Desktop Layout with transactions
     return (
       <div style={{ 
         backgroundColor: 'var(--bg-color)', 
@@ -183,9 +346,9 @@ const Dashboard: React.FC = ()  => {
       }}>
         {/* Desktop Sidebar */}
         <div style={{ 
-          width: '500px', // Reduced from 320px
-          minWidth: '280px', // Added for consistency
-          background: 'rgba(255, 255, 255, 0.05)', // More consistent glass effect
+          width: '500px',
+          minWidth: '280px',
+          background: 'rgba(255, 255, 255, 0.05)',
           backdropFilter: 'blur(10px)', 
           borderRight: '1px solid rgba(255, 255, 255, 0.1)', 
           display: 'flex', 
@@ -198,7 +361,7 @@ const Dashboard: React.FC = ()  => {
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center', 
-            padding: '20px', // Reduced padding
+            padding: '20px',
             borderBottom: '1px solid rgba(255, 255, 255, 0.1)' 
           }}>
             <div>
@@ -206,9 +369,10 @@ const Dashboard: React.FC = ()  => {
               <h2 style={{ fontSize: '1.125rem', fontWeight: '600', margin: '0' }}>{firstName}</h2>
             </div>
             <button 
+              onClick={() => navigate("/profile")}
               style={{
                 background: 'var(--accent-color)',
-                width: '44px', // Slightly smaller
+                width: '44px',
                 height: '44px',
                 display: 'flex',
                 alignItems: 'center',
@@ -229,15 +393,15 @@ const Dashboard: React.FC = ()  => {
 
           {/* Desktop Balance Card */}
           <section style={{ 
-            margin: '20px', // Reduced margin
-            padding: '20px', // Reduced padding
+            margin: '20px',
+            padding: '20px',
             background: 'rgba(255, 255, 255, 0.05)', 
             backdropFilter: 'blur(10px)', 
             borderRadius: '16px', 
             border: '1px solid rgba(255, 255, 255, 0.1)' 
           }}>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.75rem' }}>ZAR Stablecoin Balance</label>
-            <h1 style={{ margin: '8px 0 16px 0', fontSize: '1.75rem' }}>R {balance}</h1> {/* Smaller font */}
+            <h1 style={{ margin: '8px 0 16px 0', fontSize: '1.75rem' }}>R {balance}</h1>
             
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', color: '#4ade80' }}>
               <FiArrowUpRight style={{ marginRight: '4px' }} /> 
@@ -246,7 +410,6 @@ const Dashboard: React.FC = ()  => {
 
             <div className="decor-line" />
 
-            {/* Wallet Address */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, Liberation Mono, Courier New, monospace' }}>{userId}</p>
               <button 
@@ -258,7 +421,7 @@ const Dashboard: React.FC = ()  => {
                   cursor: 'pointer',
                   transition: 'color 0.3s ease'
                 }}
-                onClick={() => navigator.clipboard?.writeText('0x17d0c9ac')}
+                onClick={() => navigator.clipboard?.writeText(userId)}
               >
                 Copy
               </button>
@@ -277,10 +440,10 @@ const Dashboard: React.FC = ()  => {
                     width: '100%',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px', // Reduced gap
+                    gap: '12px',
                     background: 'rgba(255, 255, 255, 0.05)',
                     backdropFilter: 'blur(10px)',
-                    padding: '12px', // Reduced padding
+                    padding: '12px',
                     borderRadius: '12px',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                     cursor: 'pointer',
@@ -288,7 +451,7 @@ const Dashboard: React.FC = ()  => {
                     color: 'rgba(255, 255, 255, 0.87)'
                   }}
                 >
-                  <div style={{ fontSize: '1.5rem' }}>{action.icon}</div> {/* Smaller icons */}
+                  <div style={{ fontSize: '1.5rem' }}>{action.icon}</div>
                   <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{action.label}</span>
                 </button>
               ))}
@@ -331,23 +494,28 @@ const Dashboard: React.FC = ()  => {
           </nav>
         </div>
 
-        {/* Desktop Main Content */}
+        {/* Desktop Main Content*/}
         <div style={{ 
           flex: 1, 
           display: 'flex', 
           flexDirection: 'column', 
           overflow: 'hidden',
-          maxWidth: 'calc(100vw - 280px)' // Constrain width
+          maxWidth: 'calc(100vw - 500px)'
         }}>
           {/* Desktop Main Header */}
           <header style={{ 
-            padding: '24px 32px', // Reduced padding
+            padding: '24px 32px',
             background: 'rgba(255, 255, 255, 0.03)', 
             backdropFilter: 'blur(10px)', 
             borderBottom: '1px solid rgba(255, 255, 255, 0.1)' 
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>Recent Activity</h2>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0 0 4px 0' }}>Recent Activity</h2>
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)', margin: '0' }}>
+                  {transactions.length} total transactions
+                </p>
+              </div>
               <button style={{
                 color: 'var(--accent-color)',
                 fontSize: '0.875rem',
@@ -364,85 +532,60 @@ const Dashboard: React.FC = ()  => {
 
           {/* Desktop Recent Activity */}
           <section style={{ flex: 1, padding: '24px 32px', overflowY: 'auto' }}>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '16px', 
-              maxWidth: '800px', // Constrain max width
-              width: '100%'
-            }}>
-              {isLoading ? (
-                // Loading skeleton
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      backdropFilter: 'blur(10px)',
-                      padding: '20px', // Reduced padding
-                      borderRadius: '16px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <div style={{ opacity: 0.5 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{ width: '16px', height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%' }}></div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', marginBottom: '8px' }}></div>
-                            <div style={{ height: '12px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', width: '75%' }}></div>
+            <div style={{ maxWidth: '800px', width: '100%' }}>
+              <FilterButtons />
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {isLoading ? (
+                  // Loading skeleton
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        backdropFilter: 'blur(10px)',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
+                        <div style={{ opacity: 0.5 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <div style={{ width: '16px', height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%' }}></div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ height: '14px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', marginBottom: '6px' }}></div>
+                              <div style={{ height: '12px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', width: '75%' }}></div>
+                            </div>
+                            <div style={{ height: '14px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', width: '80px' }}></div>
                           </div>
-                          <div style={{ height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', width: '80px' }}></div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : transactions.length === 0 ? (
-                // No transactions state
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  backdropFilter: 'blur(10px)',
-                  padding: '48px',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
-                    <FiClock style={{ width: '48px', height: '48px', margin: '0 auto 16px' }} />
-                    <p style={{ fontSize: '1.125rem', marginBottom: '8px' }}>No transactions yet</p>
-                    <p style={{ fontSize: '1rem' }}>Your recent activity will appear here</p>
+                    ))}
                   </div>
-                </div>
-              ) : (
-                // Real transactions
-                transactions.map((transaction) => (
-                  <div 
-                    key={transaction.id}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      backdropFilter: 'blur(10px)',
-                      padding: '20px', // Reduced padding
-                      borderRadius: '16px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      {getStatusIcon(transaction.status)}
-                      <div>
-                        <p style={{ fontWeight: '500', color: 'rgba(255, 255, 255, 0.87)', fontSize: '0.875rem', margin: '0 0 4px 0' }}>{transaction.title}</p>
-                        <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', margin: '0 0 2px 0' }}>{transaction.subtitle}</p>
-                        <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'capitalize', margin: '0' }}>{transaction.status}</p>
-                      </div>
+                ) : filteredTransactions.length === 0 ? (
+                  // No transactions state
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '48px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
+                      <FiClock style={{ width: '48px', height: '48px', margin: '0 auto 16px' }} />
+                      <p style={{ fontSize: '1.125rem', marginBottom: '8px' }}>No transactions yet</p>
+                      <p style={{ fontSize: '1rem' }}>Your recent activity will appear here</p>
                     </div>
-                    <p style={{ fontWeight: '600', fontSize: '0.875rem', margin: '0', ...getTransactionColor(transaction) }}>
-                      {transaction.amount}
-                    </p>
                   </div>
-                ))
-              )}
+                ) : (
+                  // Real transactions with compact display
+                  <>
+                    {filteredTransactions.map((transaction) => (
+                      <CompactTransaction key={transaction.id} transaction={transaction} />
+                    ))}
+                    <LoadMoreButton />
+                  </>
+                )}
+              </div>
             </div>
           </section>
         </div>
@@ -459,7 +602,7 @@ const Dashboard: React.FC = ()  => {
       display: 'flex', 
       flexDirection: 'column' 
     }}>
-      {/* Header */}
+      {/* Header*/}
       <header style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -473,6 +616,7 @@ const Dashboard: React.FC = ()  => {
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>{firstName}</h2>
         </div>
         <button 
+          onClick={() => navigate("/profile")}
           style={{
             background: 'var(--accent-color)',
             width: '44px',
@@ -513,9 +657,8 @@ const Dashboard: React.FC = ()  => {
 
         <div className="decor-line" />
 
-        {/* Wallet Address */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, Liberation Mono, Courier New, monospace' }}>{ userId}</p>
+          <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, Liberation Mono, Courier New, monospace' }}>{userId}</p>
           <button 
             style={{
               color: 'var(--accent-color)',
@@ -525,14 +668,14 @@ const Dashboard: React.FC = ()  => {
               cursor: 'pointer',
               transition: 'color 0.3s ease'
             }}
-            onClick={() => navigator.clipboard?.writeText('0x17d0c9ac')}
+            onClick={() => navigator.clipboard?.writeText(userId)}
           >
             Copy
           </button>
         </div>
       </section>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - keeping existing */}
       <section style={{ display: 'flex', justifyContent: 'center', gap: '16px', margin: '0 24px 24px', padding: '0' }}>
         {quickActions.map((action, index) => (
           <button
@@ -562,30 +705,55 @@ const Dashboard: React.FC = ()  => {
 
       {/* Recent Activity */}
       <section style={{ flex: 1, padding: '0 24px 24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>Recent Activity</h3>
-          <button style={{
-            color: 'var(--accent-color)',
-            fontSize: '0.875rem',
-            fontWeight: '500',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'color 0.3s ease'
-          }}>
-            View All
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0 0 4px 0' }}>Recent Activity</h3>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', margin: '0' }}>
+              {transactions.length} total transactions
+            </p>
+          </div>
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{
+              color: 'var(--accent-color)',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'color 0.3s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            {isExpanded ? 'Collapse' : 'Expand'}
+            <FiChevronDown style={{ 
+              fontSize: '1rem', 
+              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.3s ease'
+            }} />
           </button>
         </div>
+
+        <FilterButtons />
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '12px',
+          marginBottom: '20px',
+          maxHeight: isExpanded ? 'none' : '400px',
+          overflowY: isExpanded ? 'visible' : 'auto'
+        }}>
           {isLoading ? (
             // Loading skeleton
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[1, 2, 3].map((i) => (
                 <div key={i} style={{
                   background: 'var(--glass-bg)',
                   backdropFilter: 'blur(10px)',
-                  padding: '20px',
+                  padding: '16px',
                   borderRadius: '16px',
                   border: '1px solid rgba(255, 255, 255, 0.1)'
                 }}>
@@ -593,16 +761,16 @@ const Dashboard: React.FC = ()  => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '16px', height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%' }}></div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', marginBottom: '8px' }}></div>
+                        <div style={{ height: '14px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', marginBottom: '6px' }}></div>
                         <div style={{ height: '12px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', width: '75%' }}></div>
                       </div>
-                      <div style={{ height: '16px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', width: '80px' }}></div>
+                      <div style={{ height: '14px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', width: '80px' }}></div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          ) : transactions.length === 0 ? (
+          ) : filteredTransactions.length === 0 ? (
             // No transactions state
             <div style={{
               background: 'var(--glass-bg)',
@@ -614,82 +782,68 @@ const Dashboard: React.FC = ()  => {
             }}>
               <div style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
                 <FiClock style={{ width: '40px', height: '40px', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: '1rem', marginBottom: '8px' }}>No transactions yet</p>
-                <p style={{ fontSize: '0.875rem' }}>Your recent activity will appear here</p>
+                <p style={{ fontSize: '1rem', marginBottom: '8px' }}>
+                  {filterType === 'all' ? 'No transactions yet' : `No ${filterType} transactions`}
+                </p>
+                <p style={{ fontSize: '0.875rem' }}>
+                  {filterType === 'all' ? 'Your recent activity will appear here' : `Your ${filterType} transactions will appear here`}
+                </p>
               </div>
             </div>
           ) : (
-            // Real transactions
-            transactions.map((transaction) => (
-              <div 
-                key={transaction.id}
-                style={{
-                  background: 'var(--glass-bg)',
-                  backdropFilter: 'blur(10px)',
-                  padding: '20px',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  transition: 'all 0.3s ease',
-                  cursor: 'pointer'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {getStatusIcon(transaction.status)}
-                  <div>
-                    <p style={{ fontWeight: '500', color: 'rgba(255, 255, 255, 0.87)', fontSize: '1rem', margin: '0 0 4px 0' }}>{transaction.title}</p>
-                    <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)', margin: '0 0 2px 0' }}>{transaction.subtitle}</p>
-                    <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'capitalize', margin: '0' }}>{transaction.status}</p>
-                  </div>
-                </div>
-                <p style={{ fontWeight: '600', margin: '0', ...getTransactionColor(transaction) }}>
-                  {transaction.amount}
-                </p>
-              </div>
-            ))
+            // Real transactions with compact display
+            <>
+              {filteredTransactions.map((transaction) => (
+                <CompactTransaction key={transaction.id} transaction={transaction} />
+              ))}
+              {!isExpanded && <LoadMoreButton />}
+            </>
           )}
         </div>
       </section>
 
-      {/* Bottom Navigation */}
-      <nav style={{ 
+      {/* Bottom Navigation*/}
+    <nav style={{ 
         background: 'var(--glass-bg)', 
         backdropFilter: 'blur(10px)', 
-        padding: '16px 24px', 
-        display: 'flex', 
+        padding: '8px 16px', 
+        display: 'flex',
+        position: 'fixed',
+        zIndex: 1000,
+        bottom: 0,
+        width: '100%',
+        backgroundColor: 'transparent',
         justifyContent: 'space-around', 
         borderTop: '1px solid rgba(255, 255, 255, 0.1)' 
-      }}>
+    }}>
         {[
-          { icon: FiHome, label: 'Home', active: true },
-          { icon: FiSend, label: 'Send', active: false },
-          { icon: FaQrcode, label: 'Request', active: false },
-          { icon: FiUser, label: 'Profile', active: false }
+            { icon: FiHome, label: 'Home', active: true },
+            { icon: FiSend, label: 'Send', active: false },
+            { icon: FaQrcode, label: 'Request', active: false },
+            { icon: FiUser, label: 'Profile', active: false }
         ].map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={index}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                transition: 'all 0.3s ease',
-                padding: '4px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: item.active ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.6)'
-              }}
-            >
-              <Icon style={{ fontSize: '1.25rem', marginBottom: '8px' }} />
-              <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>{item.label}</span>
-            </button>
-          );
+            const Icon = item.icon;
+            return (
+                <button
+                    key={index}
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        transition: 'all 0.3s ease',
+                        padding: '4px 16px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: item.active ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.6)'
+                    }}
+                >
+                    <Icon style={{ fontSize: '1.25rem', marginBottom: '8px' }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>{item.label}</span>
+                </button>
+            );
         })}
-      </nav>
+    </nav>
     </div>
   );
 };

@@ -8,7 +8,7 @@ interface CollaborativeRequestPayload {
   totalAmount: number;
   description: string;
   merchantId: string;
-  splitType: "OPEN" | "EQUAL"; // Match your backend enum
+  splitType: "OPEN" | "EQUAL";
   maxParticipants?: number | null;
   expiryDate: string;
 }
@@ -19,7 +19,6 @@ interface CreateRequestResponse {
   description: string;
   status: string;
   createdAt: string;
-  // Add other fields as needed
 }
 
 interface WhatsAppNotificationData {
@@ -56,12 +55,6 @@ const SendMoneyPage = () => {
   const API_AUTH_TOKEN = import.meta.env.VITE_API_AUTH_TOKEN;
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-  console.log("Environment variables:", {
-    API_BASE_URL,
-    BACKEND_URL,
-    userId
-  });
-
   const formatPhoneForWhatsApp = (phoneNumber: string): string => {
     if (!phoneNumber) return '';
     
@@ -79,7 +72,7 @@ const SendMoneyPage = () => {
     return cleaned;
   };
 
-  
+
   const sendWhatsAppNotification = async (data: WhatsAppNotificationData) => {
 
     try {
@@ -123,7 +116,7 @@ const SendMoneyPage = () => {
     }
   };
 
-  /** ✅ Validation */
+  /*Validation */
   const validateDirectSend = (): boolean => {
     if (!recipientEmail.trim() || !emailRegex.test(recipientEmail)) {
       setError("Please enter a valid recipient email");
@@ -159,7 +152,7 @@ const SendMoneyPage = () => {
     return true;
   };
 
-  /** ✅ Direct send flow */
+  /*Direct send flow */
   const handleDirectSend = async () => {
     if (!validateDirectSend()) return;
 
@@ -265,7 +258,7 @@ const SendMoneyPage = () => {
     }
   };
 
-  /** ✅ Enhanced collaborative request flow */
+  /*collaborative request flow */
   const handleCollaborativeRequest = async () => {
     if (!validateCollaborative()) return;
 
@@ -356,7 +349,7 @@ const SendMoneyPage = () => {
     }
   };
 
-  /** ✅ Generate QR data for collaborative requests */
+  /*Generate QR data for collaborative requests */
   const generateQRData = (requestId: string): string => {
     const qrData = {
       type: 'collaborative',
@@ -370,7 +363,7 @@ const SendMoneyPage = () => {
     return `${window.location.origin}/pay?data=${encodedData}`;
   };
 
-  /** ✅ Reset form */
+  /*Reset form */
   const resetForm = () => {
     setRecipient("");
     setAmount("");
@@ -399,14 +392,14 @@ const SendMoneyPage = () => {
         borderRadius: 20,
         border: "1px solid rgba(255, 255, 255, 0.1)"
       }}>
-      <h2 style={{ 
+      <h1 style={{ 
         marginBottom: 24, 
-        fontSize: 24,
-        fontWeight: 600,
+        fontSize: 28,
+        fontWeight: 700,
         textAlign: "center"
       }}>
         {isCollaborative ? "Create Collaborative Payment" : "Send Money"}
-      </h2>
+      </h1>
 
       {/* Error message */}
       {error && (
@@ -443,7 +436,7 @@ const SendMoneyPage = () => {
           display: "flex", 
           alignItems: "center", 
           gap: 8,
-          fontSize: 16,
+          fontSize: 13,
           fontWeight: 500
         }}>
           <input
@@ -475,7 +468,7 @@ const SendMoneyPage = () => {
           fontSize: 14,
           fontWeight: 500
         }}>
-          {isCollaborative ? "Merchant/Final Recipient Email:" : "Recipient Email:"}
+          {isCollaborative ? "Final Recipient Email:" : "Recipient Email:"}
         </label>
         <input
           type="email"
@@ -570,7 +563,6 @@ const SendMoneyPage = () => {
                 padding: 12, 
                 borderRadius: 12,
                 border: "1px solid rgba(255, 255, 255, 0.1)",
-                background: "rgba(255, 255, 255, 0.05)",
                 color: "white",
                 fontSize: 16
               }}
@@ -611,7 +603,6 @@ const SendMoneyPage = () => {
                   padding: 12, 
                   borderRadius: 12,
                   border: "1px solid rgba(255, 255, 255, 0.1)",
-                  background: "rgba(255, 255, 255, 0.05)",
                   color: "white",
                   fontSize: 16
                 }}
@@ -646,7 +637,6 @@ const SendMoneyPage = () => {
                 padding: 12, 
                 borderRadius: 12,
                 border: "1px solid rgba(255, 255, 255, 0.1)",
-                background: "rgba(255, 255, 255, 0.05)",
                 color: "white",
                 fontSize: 16
               }}
@@ -679,7 +669,6 @@ const SendMoneyPage = () => {
             padding: 12, 
             borderRadius: 12,
             border: "1px solid rgba(255, 255, 255, 0.1)",
-            background: "rgba(255, 255, 255, 0.05)",
             color: "white",
             fontSize: 16
           }}
@@ -729,6 +718,30 @@ const SendMoneyPage = () => {
           Switch to Direct Send
         </button>
       )}
+
+       {/* Footer Actions */}
+      <div style={{
+        marginTop: 32,
+        paddingTop: 24,
+        borderTop: "1px solid #4b5563",
+        textAlign: "center"
+      }}>
+        <button
+          onClick={() => navigate("/dashboard")}
+          style={{
+            padding: "12px 24px",
+            backgroundColor: "#6b7280",
+            color: "white",
+            border: "none",
+            borderRadius: 8,
+            fontSize: 16,
+            cursor: "pointer"
+          }}
+        >
+          Back to Main Dashboard
+        </button>
+      </div>
+
       </div>
     </div>
   );

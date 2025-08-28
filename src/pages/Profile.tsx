@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
   const [userData, setUserData] = useState<{ firstName: string; lastName: string; email: string }>({
@@ -7,6 +8,10 @@ const ProfilePage = () => {
     email: "",
   });
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
@@ -29,14 +34,32 @@ const ProfilePage = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const fetchPhoneNumber = async () => {
+      if (userData.email) {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/user/email/${userData.email}`, {
+            headers: { "Content-Type": "application/json" }
+          });
+          
+          if (response.ok) {
+            const recipient_data = await response.json();
+            setPhoneNumber(recipient_data.phoneNumber);
+          } else {
+            console.error("Error fetching the phone number");
+          }
+        } catch (error) {
+          console.error("Fetch error:", error);
+        }
+      }
+    };
+
+    fetchPhoneNumber();
+  }, [userData.email, BACKEND_URL]);
+
   const handleLogout = () => {
     try {
-      setUserData({
-        firstName: "",
-        lastName: "",
-        email: "",
-      });
-
+      setUserData({ firstName: "", lastName: "", email: "" });
       localStorage.removeItem('user');
       localStorage.removeItem('userId');
   
@@ -50,6 +73,10 @@ const ProfilePage = () => {
 
   const handleEditProfile = () => {
     console.log("Edit profile clicked");
+  };
+
+  const handleBack = () => {
+    navigate(-1); // Go back to the previous page
   };
 
   return (
@@ -138,7 +165,7 @@ const ProfilePage = () => {
           />
         </div>
 
-        <div style={{ marginBottom: isDesktop ? 28 : 24 }}>
+        <div style={{ marginBottom: isDesktop ? 20 : 16 }}>
           <label style={{ 
             fontSize: isDesktop ? "0.875rem" : "0.75rem", 
             color: "rgba(255, 255, 255, 0.7)",
@@ -164,8 +191,52 @@ const ProfilePage = () => {
             }}
           />
         </div>
+        
+        <div style={{ marginBottom: isDesktop ? 20 : 16 }}>
+          <label style={{ 
+            fontSize: isDesktop ? "0.875rem" : "0.75rem", 
+            color: "rgba(255, 255, 255, 0.7)",
+            display: "block",
+            marginBottom: 6
+          }}>
+            Phone Number:
+          </label>
+          <input
+            type="text"
+            value={phoneNumber ?? "Loading..."}
+            readOnly
+            style={{ 
+              width: "100%", 
+              padding: isDesktop ? 16 : 12, 
+              marginTop: 4, 
+              borderRadius: isDesktop ? 12 : 8,
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "rgba(255, 255, 255, 0.87)",
+              fontSize: isDesktop ? "1rem" : "0.875rem",
+              fontFamily: "inherit"
+            }}
+          />
+        </div>
 
         <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+          <button
+            onClick={handleBack}
+            style={{
+              padding: "12px 20px",
+              background: "rgba(200, 200, 250, 0.1)",
+              color: "rgba(100, 100, 250, 0.8)",
+              border: "1px solid rgba(100, 100, 250, 0.2)",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+              transition: "all 0.3s ease"
+            }}
+          >
+            Back
+          </button>
+          
           <button
             onClick={handleEditProfile}
             style={{

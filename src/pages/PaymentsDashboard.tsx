@@ -1,5 +1,3 @@
-// Enhanced PaymentsDashboard.tsx with QR Code Support
-
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import QRCode from "react-qr-code";
@@ -346,22 +344,51 @@ const CollaborativeDashboard = () => {
     </div>
   );
 
-  if (isLoading) {
-    return (
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "400px",
-        color: "white"
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ marginBottom: 16, fontSize: 24 }}>⏳</div>
-          <p>Loading your collaborative payments...</p>
+    if (isLoading) {
+      return (
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "400px",
+          color: "white",
+          textAlign: "center",
+          position: "relative",
+          overflow: "hidden"
+        }}>
+          <div style={{
+            width: "50px",
+            height: "50px",
+            border: "8px solid rgba(255, 255, 255, 0.2)",
+            borderTop: "8px solid white",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+            marginBottom: 16,
+          }}></div>
+          <p style={{
+            fontSize: 20,
+            fontWeight: "bold",
+            animation: "fadeIn 1s infinite alternate",
+            animationDelay: "0.5s"
+          }}>
+            Loading your collaborative payments...
+          </p>
+          <style>
+            {`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+              @keyframes fadeIn {
+                0% { opacity: 0.5; }
+                100% { opacity: 1; }
+              }
+            `}
+          </style>
         </div>
-      </div>
-    );
-  }
+      );
+    }
+
 
   if (error && !userId) {
     return (
@@ -419,8 +446,8 @@ const CollaborativeDashboard = () => {
       {/* Tab Navigation */}
       <div style={{
         display: "flex",
-        backgroundColor: "#374151",
         borderRadius: 12,
+        gap: 10,
         padding: 4,
         marginBottom: 24
       }}>
@@ -434,7 +461,7 @@ const CollaborativeDashboard = () => {
             fontSize: 16,
             fontWeight: 600,
             cursor: "pointer",
-            backgroundColor: activeTab === "created" ? "#3b82f6" : "transparent",
+            backgroundColor: activeTab === "created" ? "#3b82f6" : "#495b75ff",
             color: activeTab === "created" ? "white" : "#9ca3af",
             transition: "all 0.2s"
           }}
@@ -451,7 +478,7 @@ const CollaborativeDashboard = () => {
             fontSize: 16,
             fontWeight: 600,
             cursor: "pointer",
-            backgroundColor: activeTab === "contributed" ? "#3b82f6" : "transparent",
+            backgroundColor: activeTab === "contributed" ? "#3b82f6" : "#495b75ff",
             color: activeTab === "contributed" ? "white" : "#9ca3af",
             transition: "all 0.2s"
           }}
@@ -494,7 +521,7 @@ const CollaborativeDashboard = () => {
             cursor: "pointer"
           }}
         >
-          🔄 Refresh
+          Refresh
         </button>
       </div>
 
