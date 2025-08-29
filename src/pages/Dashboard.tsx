@@ -32,7 +32,7 @@ const Dashboard: React.FC = ()  => {
   const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'incoming' | 'outgoing' | 'pending'>('all');
   const [isExpanded, setIsExpanded] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState('Home');
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
   const navigate = useNavigate()
@@ -461,37 +461,56 @@ const Dashboard: React.FC = ()  => {
           {/* Desktop Bottom Navigation */}
           <nav style={{ padding: '30px 20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <div style={{ display: 'flex', flexDirection: 'row', gap: '4px' }}>
-              {[
-                { icon: FiHome, label: 'Home', active: true },
-                { icon: FiSend, label: 'Send', active: false },
-                { icon: FaQrcode, label: 'Request', active: false },
-                { icon: FiUser, label: 'Profile', active: false }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={index}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      transition: 'all 0.3s ease',
-                      backgroundColor: item.active ? 'rgba(100, 108, 255, 0.1)' : 'transparent',
-                      color: item.active ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.6)',
-                      border: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <Icon style={{ fontSize: '1rem' }} />
-                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{item.label}</span>
-                  </button>
-                );
-              })}
+                {[
+                    { icon: FiHome, label: 'Home', route: '/', id: 'home' },
+                    { icon: FiSend, label: 'Send', route: '/send', id: 'send' },
+                    { icon: FaQrcode, label: 'Requests', route: '/collaborative', id: 'request' },
+                    { icon: FiUser, label: 'Profile', route: '/profile', id: 'profile' }
+                ].map((item, index) => {
+                    const Icon = item.icon;
+                    const isActive = activeTab === item.label;
+                    
+                    return (
+                        <button
+                            key={index}
+                            onClick={() => {
+                                setActiveTab(item.label);
+                                navigate(item.route);
+                                console.log(`Navigating to ${item.label} - ${item.route}`);
+                            }}
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                transition: 'all 0.3s ease',
+                                backgroundColor: isActive ? 'rgba(100, 108, 255, 0.1)' : 'transparent',
+                                color: isActive ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.6)',
+                                border: 'none',
+                                cursor: 'pointer'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isActive) {
+                                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isActive) {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
+                                }
+                            }}
+                        >
+                            <Icon style={{ fontSize: '1rem' }} />
+                            <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{item.label}</span>
+                        </button>
+                    );
+                })}
             </div>
-          </nav>
+        </nav>
         </div>
 
         {/* Desktop Main Content*/}
@@ -803,47 +822,77 @@ const Dashboard: React.FC = ()  => {
       </section>
 
       {/* Bottom Navigation*/}
-    <nav style={{ 
-        background: 'var(--glass-bg)', 
-        backdropFilter: 'blur(10px)', 
-        padding: '8px 16px', 
-        display: 'flex',
-        position: 'fixed',
-        zIndex: 1000,
-        bottom: 0,
-        width: '100%',
-        backgroundColor: 'transparent',
-        justifyContent: 'space-around', 
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)' 
-    }}>
-        {[
-            { icon: FiHome, label: 'Home', active: true },
-            { icon: FiSend, label: 'Send', active: false },
-            { icon: FaQrcode, label: 'Request', active: false },
-            { icon: FiUser, label: 'Profile', active: false }
-        ].map((item, index) => {
-            const Icon = item.icon;
-            return (
-                <button
-                    key={index}
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        transition: 'all 0.3s ease',
-                        padding: '4px 16px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: item.active ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.6)'
-                    }}
-                >
-                    <Icon style={{ fontSize: '1.25rem', marginBottom: '8px' }} />
-                    <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>{item.label}</span>
-                </button>
-            );
-        })}
-    </nav>
+      <nav style={{ 
+          background: 'var(--glass-bg)', 
+          backdropFilter: 'blur(10px)', 
+          padding: '8px 16px', 
+          display: 'flex',
+          position: 'fixed',
+          zIndex: 1000,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: 'transparent',
+          justifyContent: 'space-around', 
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)' 
+      }}>
+          {[
+              { icon: FiHome, label: 'Home', route: '/', id: 'home' },
+              { icon: FiSend, label: 'Send', route: '/send', id: 'send' },
+              { icon: FaQrcode, label: 'Request', route: '/collaborative', id: 'request' },
+              { icon: FiUser, label: 'Profile', route: '/profile', id: 'profile' }
+          ].map((item, index) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.label;
+              
+              return (
+                  <button
+                      key={index}
+                      onClick={() => {
+                          setActiveTab(item.label);
+                          navigate(item.route);
+                          console.log(`Navigating to ${item.label} - ${item.route}`);
+                      }}
+                      style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          transition: 'all 0.3s ease',
+                          padding: '4px 16px',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: isActive ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.6)',
+                          transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                      }}
+                      onMouseEnter={(e) => {
+                          if (!isActive) {
+                              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+                              e.currentTarget.style.transform = 'scale(1.02)';
+                          }
+                      }}
+                      onMouseLeave={(e) => {
+                          if (!isActive) {
+                              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
+                              e.currentTarget.style.transform = 'scale(1)';
+                          }
+                      }}
+                  >
+                      <Icon style={{ 
+                          fontSize: '1.25rem', 
+                          marginBottom: '8px',
+                          filter: isActive ? 'drop-shadow(0 0 6px var(--accent-color))' : 'none'
+                      }} />
+                      <span style={{ 
+                          fontSize: '0.75rem', 
+                          fontWeight: isActive ? '600' : '500'
+                      }}>
+                          {item.label}
+                      </span>
+                  </button>
+              );
+          })}
+      </nav>
     </div>
   );
 };
