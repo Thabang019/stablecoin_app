@@ -434,7 +434,7 @@ const SendMoneyPage = () => {
       <div style={{ marginBottom: 20 }}>
         <label style={{ 
           display: "flex", 
-          alignItems: "center", 
+          alignItems: "center",
           gap: 8,
           fontSize: 13,
           fontWeight: 500

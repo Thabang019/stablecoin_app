@@ -1,8 +1,8 @@
 import React from 'react';
-import { FiSend, FiCamera, FiUser, FiClock, FiHome, FiArrowUpRight, FiCheck, FiChevronDown, FiFilter } from 'react-icons/fi';
+import { FiSend, FiUser, FiClock, FiHome, FiArrowUpRight, FiCheck, FiChevronDown } from 'react-icons/fi';
 import { FaQrcode } from 'react-icons/fa';
 import { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 // Types for better TypeScript support
 interface Transaction {
@@ -164,7 +164,7 @@ const Dashboard: React.FC = ()  => {
     },
     {
       icon: <FaQrcode style={{ color: 'var(--accent-color)', fontSize: '2rem' }} />,
-      label: 'Request',
+      label: 'Requests',
       onClick: () => navigate('/collaborative')
     },
   ];
@@ -839,7 +839,7 @@ const Dashboard: React.FC = ()  => {
           {[
               { icon: FiHome, label: 'Home', route: '/', id: 'home' },
               { icon: FiSend, label: 'Send', route: '/send', id: 'send' },
-              { icon: FaQrcode, label: 'Request', route: '/collaborative', id: 'request' },
+              { icon: FaQrcode, label: 'Requests', route: '/collaborative', id: 'request' },
               { icon: FiUser, label: 'Profile', route: '/profile', id: 'profile' }
           ].map((item, index) => {
               const Icon = item.icon;

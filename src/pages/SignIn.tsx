@@ -8,7 +8,6 @@ const LoginPage = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   const API_AUTH_TOKEN = import.meta.env.VITE_API_AUTH_TOKEN
 
-
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
 
@@ -52,38 +51,42 @@ const LoginPage = () => {
       }
     };
 
-
-
-
   return (
-    <div style={{ maxWidth: 400, margin: 'auto', padding: 20 }}>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <label>Email</label><br />
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8 }}
-          />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label>Password</label><br />
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8 }}
-          />
-        </div>
-        <button type="submit" style={{ padding: '8px 16px' }}>Login</button>
-      </form>
-      <p style={{ marginTop: 12 }}>
-        Don't have an account? <Link to="/signup">Sign Up</Link>
-      </p>
+    <div style={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <div style={{ maxWidth: 400, margin: 'auto', padding: 20, textAlign: 'center' }}>
+        <h2>Login</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 12 }}>
+            <label>Email</label><br />
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              style={{ width: '100%', padding: 8 }}
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label>Password</label><br />
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              style={{ width: '100%', padding: 8 }}
+            />
+          </div>
+          <button type="submit" style={{ padding: '8px 16px' }}>Login</button>
+        </form>
+        <p style={{ marginTop: 12 }}>
+          Don't have an account? <Link to="/signup">Sign Up</Link>
+        </p>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,3 @@
-// Updated RequestDetails.tsx - Add QR code generation
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import QRCode from "react-qr-code";
@@ -34,11 +32,20 @@ interface ContributePayload {
   notes?: string;
 }
 
+interface RecipientData {
+  user: {
+    firstName: string;
+    lastName: string;
+    id: string;
+  };
+}
+
 const RequestDetailsPage = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
   
   const [requestDetails, setRequestDetails] = useState<RequestDetails | null>(null);
+  const [recipientData, setRecipientData] = useState<RecipientData | null>(null);
   const [contributionAmount, setContributionAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -48,10 +55,6 @@ const RequestDetailsPage = () => {
   const [showQR, setShowQR] = useState(false);
 
   const storedUser = localStorage.getItem("user");
-  const recipientDetails = localStorage.getItem("recipientData");
-  const reciever = recipientDetails ? JSON.parse(recipientDetails) : null;
-  const firstName = reciever.user.firstName;
-  const lastName = reciever.user.lastName;
   const user = storedUser ? JSON.parse(storedUser) : null;
   const userId = user?.user?.id;
 
@@ -72,74 +75,90 @@ const RequestDetailsPage = () => {
     return `${window.location.origin}/request/${requestId}?qr=1&data=${encodedData}`;
   };
 
-  // Auto-refresh interval
+  // Fetch request details
+  const fetchRequestDetails = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/v1/requests/${requestId}`, {
+        headers: {
+          Authorization: `Bearer ${API_AUTH_TOKEN}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request not found (${response.status})`);
+      }
+
+      const data: RequestDetails = await response.json();
+      setRequestDetails(data);
+      setError(null);
+      return data;
+    } catch (err) {
+      console.error("Failed to fetch request details:", err);
+      setError("Failed to load request details. Please try again.");
+      return null;
+    }
+  };
+
+  // Fetch recipient details
+  const fetchRecipientDetails = async (merchantId: string) => {
+    try {
+
+      const storedRecipientData = localStorage.getItem("recipientData");
+      if (storedRecipientData) {
+        const parsedData = JSON.parse(storedRecipientData);
+        setRecipientData(parsedData);
+        return;
+      }
+
+      const getRecipient = await fetch(`${API_BASE_URL}/users/${merchantId}`, {
+        headers: {
+          Authorization: `Bearer ${API_AUTH_TOKEN}`
+        }
+      });
+
+      const data = await getRecipient.json();
+
+      if (!getRecipient.ok) {
+        console.error("Error fetching recipient:", data.message || "Unknown error");
+        return;
+      }
+
+      localStorage.setItem("recipientData", JSON.stringify(data));
+      setRecipientData(data);
+      console.log("Recipient data:", data);
+
+    } catch (error) {
+      console.error("Recipient data error:", error);
+    }
+  };
+
+
   useEffect(() => {
     if (!requestId) return;
 
-    const fetchRequestDetails = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/v1/requests/${requestId}`, {
-          headers: {
-            Authorization: `Bearer ${API_AUTH_TOKEN}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Request not found (${response.status})`);
-        }
-
-        const data: RequestDetails = await response.json();
-        setRequestDetails(data);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch request details:", err);
-        setError("Failed to load request details. Please try again.");
-      } finally {
-        setIsLoading(false);
+    const initializeData = async () => {
+      setIsLoading(true);
+      const requestData = await fetchRequestDetails();
+    
+      if (requestData?.merchantId) {
+        await fetchRecipientDetails(requestData.merchantId);
       }
+      
+      setIsLoading(false);
     };
 
-    fetchRequestDetails();
+    initializeData();
+  }, [requestId]);
 
-    console.log("Recipient data:", requestId);
-    console.log("Recipient data:", requestDetails);
+  useEffect(() => {
+    if (!requestDetails || requestDetails.status !== "ACTIVE") return;
 
-    const fetchRecipientDetails = async () => {
-      try {
-       const getRecipient = await fetch(`${API_BASE_URL}/users/${requestDetails?.merchantId}`, {
-          headers: {
-            Authorization: `Bearer ${API_AUTH_TOKEN}`
-          }
-        });
-
-        const data = await getRecipient.json();
-
-        if (!getRecipient.ok) {
-          alert(data.message || "Error fetching user");
-          return;
-        }
-
-        localStorage.setItem("recipientData", JSON.stringify(data));
-
-        console.log("Recipient data:", data);
-
-      } catch (error) {
-        alert("Something went wrong. Please try again later.");
-        console.error("Recipient data error:", error);
-      }
-    };
-
-    fetchRecipientDetails();
-
-    // Auto-refresh every 5 seconds if request is active
     const interval = setInterval(() => {
-      if (requestDetails?.status === "ACTIVE") {
-        fetchRequestDetails();
-      }
+      fetchRequestDetails();
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [requestId, BACKEND_URL, API_AUTH_TOKEN, requestDetails?.status]);
+  }, [requestDetails?.status]);
 
   const handleContribute = async () => {
     if (!requestDetails || !userId) return;
@@ -336,7 +355,11 @@ const RequestDetailsPage = () => {
           Collaborative Payment
         </h1>
         <p style={{ color: "#9ca3af", fontSize: 14 }}>
-          Reciever Name: {firstName}  {lastName}
+          {recipientData ? (
+            `Receiver Name: ${recipientData.user.firstName} ${recipientData.user.lastName}`
+          ) : (
+            "Loading recipient information..."
+          )}
         </p>
       </div>
 
