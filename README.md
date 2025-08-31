@@ -22,7 +22,7 @@ Primary API
 - Balance queries and transfers
 - Transaction processing
 
-Collaborative Payments Backend 
+Collaborative Payments Backend (https://github.com/Thabang019/zar_app.git)
 - Group payment request management
 - Contribution tracking
 - Request lifecycle management
